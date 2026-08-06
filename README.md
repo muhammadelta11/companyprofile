@@ -1,5 +1,9 @@
-"# company_profile" 
+# masudel-tamamy
 
-link: https://muhammadelta11.github.io/companyprofile/
+Portofolio **Muhammad Mas'ud** (`masudel-tamamy`) — web/sistem, riset, freelance, dan open trip.
 
-by. isef lutfi nur
+Live: https://muhammadelta11.github.io/companyprofile/
+
+## Tambah foto proyek
+
+Lihat `assets/img/projects/README.md` dan edit `assets/js/projects.js`.
