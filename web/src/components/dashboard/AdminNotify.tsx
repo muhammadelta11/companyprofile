@@ -70,7 +70,7 @@ export function AdminNotify() {
             push({
               id: `p-ins-${row.id}`,
               title: `Produk baru menunggu: ${row.title ?? "tanpa judul"}`,
-              href: "/dashboard/produk",
+              href: "/dashboard/produk?sumber=mitra",
               at: Date.now(),
             });
           }
@@ -86,7 +86,7 @@ export function AdminNotify() {
             push({
               id: `p-upd-${row.id}-${Date.now()}`,
               title: `Produk diajukan ulang: ${row.title ?? ""}`,
-              href: "/dashboard/produk",
+              href: "/dashboard/produk?sumber=mitra",
               at: Date.now(),
             });
           }
@@ -144,7 +144,7 @@ export function AdminNotify() {
           push({
             id: `c-${row.id}`,
             title: `Komentar produk: ${preview || "baru"}${preview.length >= 48 ? "…" : ""}`,
-            href: row.product_id ? `/market/${row.product_id}` : "/dashboard/produk",
+            href: row.product_id ? `/market/${row.product_id}` : "/dashboard/produk?sumber=mitra",
             at: Date.now(),
           });
         }

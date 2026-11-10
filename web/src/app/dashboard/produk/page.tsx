@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { requireUser, type CurrentUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -11,10 +12,14 @@ import { RejectProductForm } from "@/components/dashboard/RejectProductForm";
 import { SHIPPING_OPTIONS, type ShippingMode } from "@/lib/product";
 import { Badge, DashHead, DashLoading, Empty, formatDate } from "../ui";
 
-export default function ProdukPage() {
+type Sumber = "sendiri" | "mitra";
+
+type Props = { searchParams: Promise<{ sumber?: string }> };
+
+export default function ProdukPage({ searchParams }: Props) {
   return (
     <Suspense fallback={<DashLoading />}>
-      <Products />
+      <Products searchParams={searchParams} />
     </Suspense>
   );
 }
@@ -58,10 +63,16 @@ function submissionKind(
   return { label: "Revisi / diajukan ulang", tone: "rev" };
 }
 
-async function Products() {
+function parseSumber(raw: string | undefined): Sumber {
+  return raw === "mitra" ? "mitra" : "sendiri";
+}
+
+async function Products({ searchParams }: Props) {
   const user = await requireUser(["admin", "mitra"]);
+  const sp = await searchParams;
   const supabase = await createClient();
   const isAdmin = user.role === "admin";
+  const sumber: Sumber = isAdmin ? parseSumber(sp.sumber) : "sendiri";
 
   let query = supabase
     .from("products")
@@ -69,11 +80,18 @@ async function Products() {
       "id, title, kind, badge, price_label, description, image_url, gallery, shipping_mode, service_area, reject_reason, status, sort, owner_id, created_at, updated_at, owner:profiles!products_owner_id_fkey(full_name)"
     )
     .order("created_at", { ascending: false });
-  if (!isAdmin) query = query.eq("owner_id", user.id);
+
+  if (!isAdmin) {
+    query = query.eq("owner_id", user.id);
+  } else if (sumber === "mitra") {
+    query = query.not("owner_id", "is", null);
+  } else {
+    query = query.is("owner_id", null);
+  }
 
   const { data } = await query;
   const products = (data ?? []) as unknown as ProductRow[];
-  const canCreate = isAdmin || user.status === "active";
+  const canCreate = (isAdmin && sumber === "sendiri") || (!isAdmin && user.status === "active");
 
   const approvedByOwner = new Map<string, number>();
   for (const p of products) {
@@ -86,28 +104,55 @@ async function Products() {
   const live = products.filter((p) => p.status === "approved");
   const rejected = products.filter((p) => p.status === "rejected");
 
+  const title = !isAdmin
+    ? "Produk Market"
+    : sumber === "mitra"
+      ? "Produk mitra"
+      : "Produk sendiri";
+  const text = !isAdmin
+    ? "Produk baru atau hasil edit masuk antrean admin sebelum tayang."
+    : sumber === "mitra"
+      ? "Produk milik penjual mitra. Prioritas: cek antrean “Menunggu persetujuan”."
+      : "Produk official brand kamu (bukan milik mitra).";
+
   return (
     <>
-      <DashHead
-        title="Produk Market"
-        text={
-          isAdmin
-            ? "Urutan: terbaru dulu. Cek dulu bagian “Menunggu persetujuan”, lalu produk yang sudah tayang."
-            : "Produk baru atau hasil edit masuk antrean admin sebelum tayang."
-        }
-      />
+      <DashHead title={title} text={text} />
+
+      {isAdmin ? (
+        <nav className="dash-switch" aria-label="Jenis produk">
+          <Link
+            href="/dashboard/produk?sumber=sendiri"
+            className={sumber === "sendiri" ? "is-active" : undefined}
+          >
+            Produk sendiri
+          </Link>
+          <Link
+            href="/dashboard/produk?sumber=mitra"
+            className={sumber === "mitra" ? "is-active" : undefined}
+          >
+            Produk mitra
+          </Link>
+        </nav>
+      ) : null}
 
       {canCreate ? (
         <details className="dash-create">
           <summary>+ Tambah produk</summary>
           <ProductForm user={user} />
         </details>
-      ) : (
+      ) : !isAdmin ? (
         <p className="dash-notice">Akun mitra kamu belum diverifikasi admin.</p>
-      )}
+      ) : null}
 
       {!products.length ? (
-        <Empty>Belum ada produk.</Empty>
+        <Empty>
+          {isAdmin && sumber === "mitra"
+            ? "Belum ada produk mitra."
+            : isAdmin
+              ? "Belum ada produk sendiri."
+              : "Belum ada produk."}
+        </Empty>
       ) : (
         <>
           {pending.length ? (
@@ -117,7 +162,9 @@ async function Products() {
               </h2>
               <p className="dash-section__hint">
                 {isAdmin
-                  ? "Ini yang perlu kamu setujui atau tolak. Label menjelaskan jenis pengajuan."
+                  ? sumber === "mitra"
+                    ? "Ini yang perlu kamu setujui atau tolak. Label menjelaskan jenis pengajuan."
+                    : "Produk official yang masih pending (jarang)."
                   : "Menunggu dicek admin."}
               </p>
               <ProductList
@@ -242,7 +289,7 @@ function ProductList({
               </div>
             </div>
 
-            {canCreate ? (
+            {canCreate || isAdmin ? (
               <details className="dash-edit">
                 <summary>Ubah produk</summary>
                 <ProductForm user={user} product={p} />

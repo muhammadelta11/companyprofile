@@ -2138,6 +2138,29 @@ html[data-intro="on"] body { overflow: hidden; }
   color: var(--teal-deep);
   font-size: 0.75rem;
 }
+.dash-switch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.dash-switch a {
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-decoration: none;
+}
+.dash-switch a.is-active {
+  background: #fff;
+  color: var(--teal-deep);
+  box-shadow: 0 1px 4px rgba(10, 31, 92, 0.08);
+}
 .dash-section { margin-bottom: 1.25rem; }
 .dash-section__hint {
   margin: 0 0 0.65rem;

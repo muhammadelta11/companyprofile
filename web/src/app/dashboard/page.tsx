@@ -44,7 +44,7 @@ async function AdminOverview() {
 
   const actions = [
     { href: "/dashboard/pesanan", n: orders.count ?? 0, label: "Pesanan baru" },
-    { href: "/dashboard/produk", n: pendingProducts.count ?? 0, label: "Produk menunggu" },
+    { href: "/dashboard/produk?sumber=mitra", n: pendingProducts.count ?? 0, label: "Produk mitra menunggu" },
     { href: "/dashboard/anggota", n: pendingMitra.count ?? 0, label: "Mitra menunggu" },
     { href: "/dashboard/pendaftar", n: apps.count ?? 0, label: "Pendaftar baru" },
     { href: "/dashboard/masukan", n: feedback.count ?? 0, label: "Masukan baru" },
@@ -75,7 +75,7 @@ async function AdminOverview() {
       <div className="dash-stats">
         <Stat href="/dashboard/pendaftar" value={apps.count ?? 0} label="Pendaftar baru" />
         <Stat href="/dashboard/pesanan" value={orders.count ?? 0} label="Pesanan baru" />
-        <Stat href="/dashboard/produk" value={pendingProducts.count ?? 0} label="Produk menunggu" />
+        <Stat href="/dashboard/produk?sumber=mitra" value={pendingProducts.count ?? 0} label="Produk mitra menunggu" />
         <Stat href="/dashboard/anggota" value={pendingMitra.count ?? 0} label="Mitra menunggu" />
         <Stat href="/dashboard/masukan" value={feedback.count ?? 0} label="Masukan baru" />
         <Stat href="/dashboard/delta" value={questions.count ?? 0} label="Pertanyaan Delta (7 hari)" />
