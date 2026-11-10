@@ -53,30 +53,34 @@ async function FeedbackList() {
       {rows.length ? (
         <ul className="dash-list">
           {rows.map((f) => (
-            <li key={f.id} className="dash-row dash-row--wrap">
-              <div className="dash-row__main">
-                <strong>
-                  {f.kind} · {f.name || "Anonim"}
-                </strong>
-                <small>
-                  {formatDate(f.created_at)}
-                  {f.contact ? ` · ${f.contact}` : ""}
-                  {f.page ? ` · ${f.page}` : ""}
-                </small>
-                <p className="dash-feedback-msg">{f.message}</p>
+            <li key={f.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>
+                    {f.kind} · {f.name || "Anonim"}
+                  </strong>
+                  <small>
+                    {formatDate(f.created_at)}
+                    {f.contact ? ` · ${f.contact}` : ""}
+                    {f.page ? ` · ${f.page}` : ""}
+                  </small>
+                  <p className="dash-feedback-msg">{f.message}</p>
+                </div>
               </div>
-              <Badge value={f.status} />
-              <div className="dash-row__actions">
-                {f.status === "new" ? (
-                  <SafeAction action={setFeedbackStatus.bind(null, f.id, "read")}>
-                    Tandai dibaca
-                  </SafeAction>
-                ) : null}
-                {f.status !== "done" ? (
-                  <SafeAction action={setFeedbackStatus.bind(null, f.id, "done")}>
-                    Selesai
-                  </SafeAction>
-                ) : null}
+              <div className="dash-row__foot">
+                <Badge value={f.status} />
+                <div className="dash-row__actions">
+                  {f.status === "new" ? (
+                    <SafeAction action={setFeedbackStatus.bind(null, f.id, "read")}>
+                      Tandai dibaca
+                    </SafeAction>
+                  ) : null}
+                  {f.status !== "done" ? (
+                    <SafeAction action={setFeedbackStatus.bind(null, f.id, "done")}>
+                      Selesai
+                    </SafeAction>
+                  ) : null}
+                </div>
               </div>
             </li>
           ))}

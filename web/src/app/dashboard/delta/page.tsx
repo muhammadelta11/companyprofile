@@ -54,21 +54,29 @@ async function Delta() {
       {faqs?.length ? (
         <ul className="dash-list">
           {(faqs as Faq[]).map((f) => (
-            <li key={f.id} className="dash-row dash-row--wrap">
-              <div className="dash-row__main">
-                <strong>{f.question}</strong>
-                <small>{f.tags.join(", ") || "tanpa kata kunci"}</small>
-                <p className="dash-row__text">{f.answer}</p>
+            <li key={f.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>{f.question}</strong>
+                  <small>{f.tags.join(", ") || "tanpa kata kunci"}</small>
+                  <p className="dash-row__text">{f.answer}</p>
+                </div>
               </div>
-              {f.published ? null : <span className="badge badge--pending">Nonaktif</span>}
-              <div className="dash-row__actions">
-                <SafeAction
-                  className="btn btn-danger btn-sm"
-                  confirm="Hapus jawaban ini?"
-                  action={deleteFaq.bind(null, f.id)}
-                >
-                  Hapus
-                </SafeAction>
+              <div className="dash-row__foot">
+                {f.published ? (
+                  <span className="badge badge--approved">Aktif</span>
+                ) : (
+                  <span className="badge badge--pending">Nonaktif</span>
+                )}
+                <div className="dash-row__actions">
+                  <SafeAction
+                    className="btn btn-danger btn-sm dash-row__danger"
+                    confirm="Hapus jawaban ini?"
+                    action={deleteFaq.bind(null, f.id)}
+                  >
+                    Hapus
+                  </SafeAction>
+                </div>
               </div>
               <details className="dash-edit">
                 <summary>Edit</summary>
@@ -85,25 +93,29 @@ async function Delta() {
       {logs?.length ? (
         <ul className="dash-list">
           {logs.map((l) => (
-            <li key={l.id} className="dash-row dash-row--wrap">
-              <div className="dash-row__main">
-                <strong>{l.question}</strong>
-                <small>
-                  {formatDate(l.created_at)} · {l.page ?? "/"}
-                </small>
+            <li key={l.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>{l.question}</strong>
+                  <small>
+                    {formatDate(l.created_at)} · {l.page ?? "/"}
+                  </small>
+                </div>
               </div>
-              {l.confidence === "low" ? (
-                <span className="badge badge--rejected">Belum terjawab</span>
-              ) : (
-                <span className="badge badge--approved">Terjawab</span>
-              )}
-              <div className="dash-row__actions">
-                <SafeAction
-                  className="btn btn-outline btn-sm"
-                  action={deleteDeltaLog.bind(null, l.id)}
-                >
-                  Hapus
-                </SafeAction>
+              <div className="dash-row__foot">
+                {l.confidence === "low" ? (
+                  <span className="badge badge--rejected">Belum terjawab</span>
+                ) : (
+                  <span className="badge badge--approved">Terjawab</span>
+                )}
+                <div className="dash-row__actions">
+                  <SafeAction
+                    className="btn btn-outline btn-sm"
+                    action={deleteDeltaLog.bind(null, l.id)}
+                  >
+                    Hapus
+                  </SafeAction>
+                </div>
               </div>
               {l.confidence === "low" ? (
                 <details className="dash-edit">

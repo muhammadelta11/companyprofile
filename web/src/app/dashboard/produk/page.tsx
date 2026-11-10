@@ -183,59 +183,65 @@ function ProductList({
       {items.map((p) => {
         const kind = submissionKind(p, approvedByOwner);
         return (
-          <li key={p.id} className="dash-row dash-row--wrap">
-            {p.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="dash-thumb" src={p.image_url} alt="" />
-            ) : (
-              <span className="dash-thumb dash-thumb--empty">
-                {p.kind === "digital" ? "D" : "F"}
-              </span>
-            )}
-            <div className="dash-row__main">
-              <strong>
-                {p.title}
-                {kind ? (
-                  <span className={`dash-chip dash-chip--${kind.tone}`}>{kind.label}</span>
+          <li key={p.id} className="dash-row dash-row--product">
+            <div className="dash-row__top">
+              {p.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className="dash-thumb" src={p.image_url} alt="" />
+              ) : (
+                <span className="dash-thumb dash-thumb--empty">
+                  {p.kind === "digital" ? "D" : "F"}
+                </span>
+              )}
+              <div className="dash-row__main">
+                <strong>
+                  {p.title}
+                  {kind ? (
+                    <span className={`dash-chip dash-chip--${kind.tone}`}>{kind.label}</span>
+                  ) : null}
+                </strong>
+                <small>
+                  {[
+                    p.price_label,
+                    p.kind,
+                    isAdmin ? p.owner?.full_name ?? "Official" : null,
+                    formatDate(p.created_at),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+                {!isAdmin && p.status === "rejected" && p.reject_reason ? (
+                  <p className="dash-reject-reason">Alasan tolak: {p.reject_reason}</p>
                 ) : null}
-              </strong>
-              <small>
-                {[
-                  p.price_label,
-                  p.kind,
-                  isAdmin ? p.owner?.full_name ?? "Official" : null,
-                  formatDate(p.created_at),
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </small>
-              {!isAdmin && p.status === "rejected" && p.reject_reason ? (
-                <p className="dash-reject-reason">Alasan tolak: {p.reject_reason}</p>
-              ) : null}
+              </div>
             </div>
-            <Badge value={p.status} />
-            <div className="dash-row__actions">
-              {isAdmin && p.status === "pending" ? (
-                <>
+
+            <div className="dash-row__foot">
+              <Badge value={p.status} />
+              <div className="dash-row__actions">
+                {isAdmin && p.status === "pending" ? (
+                  <>
+                    <SafeAction action={setProductStatus.bind(null, p.id, "approved")}>
+                      Setujui
+                    </SafeAction>
+                    <RejectProductForm productId={p.id} />
+                  </>
+                ) : null}
+                {isAdmin && p.status === "rejected" ? (
                   <SafeAction action={setProductStatus.bind(null, p.id, "approved")}>
-                    Setujui
+                    Setujui sekarang
                   </SafeAction>
-                  <RejectProductForm productId={p.id} />
-                </>
-              ) : null}
-              {isAdmin && p.status === "rejected" ? (
-                <SafeAction action={setProductStatus.bind(null, p.id, "approved")}>
-                  Setujui sekarang
+                ) : null}
+                <SafeAction
+                  className="btn btn-danger btn-sm dash-row__danger"
+                  confirm={`Hapus "${p.title}"?`}
+                  action={deleteProduct.bind(null, p.id)}
+                >
+                  Hapus
                 </SafeAction>
-              ) : null}
-              <SafeAction
-                className="btn btn-danger btn-sm"
-                confirm={`Hapus "${p.title}"?`}
-                action={deleteProduct.bind(null, p.id)}
-              >
-                Hapus
-              </SafeAction>
+              </div>
             </div>
+
             {canCreate ? (
               <details className="dash-edit">
                 <summary>Ubah produk</summary>

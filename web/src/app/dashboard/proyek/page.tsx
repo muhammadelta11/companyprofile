@@ -49,26 +49,34 @@ async function Projects() {
       {projects.length ? (
         <ul className="dash-list">
           {projects.map((p) => (
-            <li key={p.id} className="dash-row dash-row--wrap">
-              {p.cover_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="dash-thumb" src={p.cover_url} alt="" />
-              ) : (
-                <span className="dash-thumb dash-thumb--empty">{p.title.slice(0, 2)}</span>
-              )}
-              <div className="dash-row__main">
-                <strong>{p.title}</strong>
-                <small>{[p.category, p.tag, p.link].filter(Boolean).join(" · ")}</small>
+            <li key={p.id} className="dash-row dash-row--product">
+              <div className="dash-row__top">
+                {p.cover_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="dash-thumb" src={p.cover_url} alt="" />
+                ) : (
+                  <span className="dash-thumb dash-thumb--empty">{p.title.slice(0, 2)}</span>
+                )}
+                <div className="dash-row__main">
+                  <strong>{p.title}</strong>
+                  <small>{[p.category, p.tag, p.link].filter(Boolean).join(" · ")}</small>
+                </div>
               </div>
-              {p.published ? null : <span className="badge badge--pending">Disembunyikan</span>}
-              <div className="dash-row__actions">
-                <SafeAction
-                  className="btn btn-danger btn-sm"
-                  confirm={`Hapus proyek "${p.title}"?`}
-                  action={deleteProject.bind(null, p.id)}
-                >
-                  Hapus
-                </SafeAction>
+              <div className="dash-row__foot">
+                {p.published ? (
+                  <span className="badge badge--approved">Tayang</span>
+                ) : (
+                  <span className="badge badge--pending">Disembunyikan</span>
+                )}
+                <div className="dash-row__actions">
+                  <SafeAction
+                    className="btn btn-danger btn-sm dash-row__danger"
+                    confirm={`Hapus proyek "${p.title}"?`}
+                    action={deleteProject.bind(null, p.id)}
+                  >
+                    Hapus
+                  </SafeAction>
+                </div>
               </div>
               <details className="dash-edit">
                 <summary>Edit</summary>

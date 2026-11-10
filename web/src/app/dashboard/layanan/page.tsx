@@ -51,22 +51,26 @@ async function Services() {
       {services.length ? (
         <ul className="dash-list">
           {services.map((s) => (
-            <li key={s.id} className="dash-row dash-row--wrap">
-              <div className="dash-row__main">
-                <strong>{s.title}</strong>
-                <small>
-                  {[s.accent, `${(s.items ?? []).length} poin`].join(" · ")}
-                </small>
+            <li key={s.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>{s.title}</strong>
+                  <small>
+                    {[s.accent, `${(s.items ?? []).length} poin`].join(" · ")}
+                  </small>
+                </div>
               </div>
-              <Badge value={s.published ? "approved" : "pending"} />
-              <div className="dash-row__actions">
-                <SafeAction
-                  className="btn btn-danger btn-sm"
-                  confirm={`Hapus "${s.title}"?`}
-                  action={deleteService.bind(null, s.id)}
-                >
-                  Hapus
-                </SafeAction>
+              <div className="dash-row__foot">
+                <Badge value={s.published ? "approved" : "pending"} />
+                <div className="dash-row__actions">
+                  <SafeAction
+                    className="btn btn-danger btn-sm dash-row__danger"
+                    confirm={`Hapus "${s.title}"?`}
+                    action={deleteService.bind(null, s.id)}
+                  >
+                    Hapus
+                  </SafeAction>
+                </div>
               </div>
               <details className="dash-edit">
                 <summary>Edit</summary>

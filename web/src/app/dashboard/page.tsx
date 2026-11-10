@@ -142,12 +142,16 @@ async function MemberOverview({ user }: { user: CurrentUser }) {
       {orders?.length ? (
         <ul className="dash-list">
           {orders.map((o) => (
-            <li key={o.id} className="dash-row">
-              <div className="dash-row__main">
-                <strong>{o.product_title ?? "Produk"}</strong>
-                <small>{formatDate(o.created_at)}</small>
+            <li key={o.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>{o.product_title ?? "Produk"}</strong>
+                  <small>{formatDate(o.created_at)}</small>
+                </div>
               </div>
-              <Badge value={o.status} />
+              <div className="dash-row__foot">
+                <Badge value={o.status} />
+              </div>
             </li>
           ))}
         </ul>

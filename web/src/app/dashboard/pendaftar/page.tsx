@@ -100,36 +100,40 @@ function AppList({
       {items.map((a) => {
         const kind = applyKind(a);
         return (
-          <li key={a.id} className="dash-row dash-row--wrap">
-            <div className="dash-row__main">
-              <strong>
-                {a.name}
-                <Badge value={a.role} />
-                <span className={`dash-chip dash-chip--${kind.tone}`}>{kind.label}</span>
-              </strong>
-              <small>
-                {[a.city, a.product_kind, formatDate(a.created_at)].filter(Boolean).join(" · ")}
-              </small>
-              {a.detail ? <p className="dash-row__text">{a.detail}</p> : null}
+          <li key={a.id} className="dash-row dash-row--product">
+            <div className="dash-row__top dash-row__top--text">
+              <div className="dash-row__main">
+                <strong>
+                  {a.name}
+                  <Badge value={a.role} />
+                  <span className={`dash-chip dash-chip--${kind.tone}`}>{kind.label}</span>
+                </strong>
+                <small>
+                  {[a.city, a.product_kind, formatDate(a.created_at)].filter(Boolean).join(" · ")}
+                </small>
+                {a.detail ? <p className="dash-row__text">{a.detail}</p> : null}
+              </div>
             </div>
-            <Badge value={a.status} />
-            <div className="dash-row__actions">
-              {ACTIONS.filter((x) => x.status !== a.status).map((x) => (
+            <div className="dash-row__foot">
+              <Badge value={a.status} />
+              <div className="dash-row__actions">
+                {ACTIONS.filter((x) => x.status !== a.status).map((x) => (
+                  <SafeAction
+                    key={x.status}
+                    className="btn btn-outline btn-sm"
+                    action={setApplicationStatus.bind(null, a.id, x.status)}
+                  >
+                    {x.label}
+                  </SafeAction>
+                ))}
                 <SafeAction
-                  key={x.status}
-                  className="btn btn-outline btn-sm"
-                  action={setApplicationStatus.bind(null, a.id, x.status)}
+                  className="btn btn-danger btn-sm dash-row__danger"
+                  confirm={`Hapus pendaftar ${a.name}?`}
+                  action={deleteApplication.bind(null, a.id)}
                 >
-                  {x.label}
+                  Hapus
                 </SafeAction>
-              ))}
-              <SafeAction
-                className="btn btn-danger btn-sm"
-                confirm={`Hapus pendaftar ${a.name}?`}
-                action={deleteApplication.bind(null, a.id)}
-              >
-                Hapus
-              </SafeAction>
+              </div>
             </div>
           </li>
         );

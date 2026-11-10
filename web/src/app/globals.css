@@ -2204,6 +2204,67 @@ html[data-intro="on"] body { overflow: hidden; }
 
 .dash-row__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem; }
 
+/* Kartu produk dashboard ? rapat, tanpa celah kosong aneh di HP */
+.dash-row--product {
+  display: grid;
+  gap: 0.65rem;
+  align-items: stretch;
+  padding: 0.75rem;
+}
+.dash-row__top {
+  display: grid;
+  grid-template-columns: 3.5rem minmax(0, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+.dash-row__top--text,
+.dash-row__top:not(:has(.dash-thumb)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.dash-row--product .dash-thumb {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 0.8rem;
+}
+.dash-row--product .dash-row__main {
+  flex: none;
+  gap: 0.2rem;
+}
+.dash-row--product .dash-row__main strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+.dash-row--product .dash-row__main small {
+  line-height: 1.35;
+}
+.dash-row__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+}
+.dash-row--product .dash-row__actions {
+  margin-left: auto;
+  max-width: 100%;
+}
+.dash-row--product .dash-row__actions select {
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.dash-row__danger {
+  padding-inline: 0.7rem;
+  min-height: 2rem;
+}
+.dash-row--product .dash-edit {
+  flex-basis: auto;
+  margin-top: 0;
+  width: 100%;
+}
+
 .dash-thumb {
   width: 3rem;
   height: 3rem;
@@ -2676,6 +2737,43 @@ div.sheet__install { cursor: default; }
   .dash-head { margin-bottom: 0.85rem; }
   .dash-head h1 { font-size: 1.45rem; }
   .dash-head p { font-size: 0.86rem; }
+
+  /* Kartu list dashboard lebih compact di HP */
+  .dash-row--wrap {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.45rem 0.55rem;
+    align-items: start;
+    padding: 0.75rem;
+  }
+  .dash-row--wrap > .dash-thumb {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .dash-row--wrap > .dash-row__main {
+    grid-column: 1 / -1;
+    flex: none;
+  }
+  .dash-row--wrap > .dash-thumb + .dash-row__main {
+    grid-column: 2 / -1;
+    grid-row: 1;
+  }
+  .dash-row--wrap > .badge {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  .dash-row--wrap > .dash-row__actions,
+  .dash-row--wrap > .dash-edit {
+    grid-column: 1 / -1;
+  }
+  .dash-create {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.85rem;
+  }
+  .dash-list { gap: 0.55rem; }
+  .dash-row--product .dash-row__foot {
+    gap: 0.4rem;
+  }
   .dash-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.55rem;
@@ -2688,21 +2786,37 @@ div.sheet__install { cursor: default; }
     gap: 0.45rem;
   }
   .dash-quick .btn { width: 100%; justify-content: center; text-align: center; }
-  .dash-row {
+  .dash-row:not(.dash-row--product) {
     flex-direction: column;
     align-items: stretch;
     gap: 0.65rem;
     padding: 0.85rem;
   }
-  .dash-row__actions {
+  .dash-row:not(.dash-row--product) > .dash-row__actions {
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 0.4rem;
   }
-  .dash-row__actions .btn,
-  .dash-row__actions button { width: 100%; justify-content: center; }
-  .dash-row__actions select { width: 100%; min-width: 0; }
+  .dash-row:not(.dash-row--product) > .dash-row__actions .btn,
+  .dash-row:not(.dash-row--product) > .dash-row__actions button {
+    width: 100%;
+    justify-content: center;
+  }
+  .dash-row:not(.dash-row--product) > .dash-row__actions select {
+    width: 100%;
+    min-width: 0;
+  }
+  .dash-row--product .dash-row__actions {
+    width: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .dash-row--product .dash-row__actions .btn,
+  .dash-row--product .dash-row__actions button {
+    width: auto;
+  }
   .dash-create,
   .dash-card { padding: 0.9rem; border-radius: 1.1rem; }
   .dash .form-row { grid-template-columns: 1fr; }

@@ -88,44 +88,50 @@ async function Orders() {
               o.buyer_name || o.buyer?.full_name || "Pengunjung";
             const phone = o.buyer_phone || o.buyer?.phone || "";
             return (
-              <li key={o.id} className="dash-row dash-row--wrap">
-                <div className="dash-row__main">
-                  <strong>{o.product_title ?? "Produk"}</strong>
-                  <small>
-                    {formatDate(o.created_at)}
-                    {canManage
-                      ? ` · ${buyerLabel}${o.buyer_city ? ` · ${o.buyer_city}` : ""}`
-                      : null}
-                  </small>
-                  {canManage && o.note ? <small className="dash-order-note">Catatan: {o.note}</small> : null}
-                </div>
-                <Badge value={o.status} />
-                {canManage ? (
-                  <div className="dash-row__actions">
-                    {phone ? (
-                      <a
-                        className="btn btn-outline btn-sm"
-                        href={waTo(
-                          phone,
-                          `Halo ${buyerLabel}, terkait order ${o.product_title ?? ""} di masudeltamamy.com…`
-                        )}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        WA pembeli
-                      </a>
+              <li key={o.id} className="dash-row dash-row--product">
+                <div className="dash-row__top dash-row__top--text">
+                  <div className="dash-row__main">
+                    <strong>{o.product_title ?? "Produk"}</strong>
+                    <small>
+                      {formatDate(o.created_at)}
+                      {canManage
+                        ? ` · ${buyerLabel}${o.buyer_city ? ` · ${o.buyer_city}` : ""}`
+                        : null}
+                    </small>
+                    {canManage && o.note ? (
+                      <small className="dash-order-note">Catatan: {o.note}</small>
                     ) : null}
-                    {(NEXT_STATUS[o.status] ?? []).map((n) => (
-                      <SafeAction
-                        key={n.status}
-                        className="btn btn-outline btn-sm"
-                        action={setOrderStatus.bind(null, o.id, n.status)}
-                      >
-                        {n.label}
-                      </SafeAction>
-                    ))}
                   </div>
-                ) : null}
+                </div>
+                <div className="dash-row__foot">
+                  <Badge value={o.status} />
+                  {canManage ? (
+                    <div className="dash-row__actions">
+                      {phone ? (
+                        <a
+                          className="btn btn-outline btn-sm"
+                          href={waTo(
+                            phone,
+                            `Halo ${buyerLabel}, terkait order ${o.product_title ?? ""} di masudeltamamy.com…`
+                          )}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          WA pembeli
+                        </a>
+                      ) : null}
+                      {(NEXT_STATUS[o.status] ?? []).map((n) => (
+                        <SafeAction
+                          key={n.status}
+                          className="btn btn-outline btn-sm"
+                          action={setOrderStatus.bind(null, o.id, n.status)}
+                        >
+                          {n.label}
+                        </SafeAction>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </li>
             );
           })}

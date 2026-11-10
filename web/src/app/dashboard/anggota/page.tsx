@@ -35,46 +35,50 @@ async function Members() {
       {members.length ? (
         <ul className="dash-list">
           {members.map((m) => (
-            <li key={m.id} className="dash-row dash-row--wrap">
-              <div className="dash-row__main">
-                <strong>
-                  {m.full_name || m.email} <Badge value={m.role} />
-                </strong>
-                <small>
-                  {[m.email, m.phone, m.city, `daftar ${formatDate(m.created_at)}`]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </small>
+            <li key={m.id} className="dash-row dash-row--product">
+              <div className="dash-row__top dash-row__top--text">
+                <div className="dash-row__main">
+                  <strong>
+                    {m.full_name || m.email} <Badge value={m.role} />
+                  </strong>
+                  <small>
+                    {[m.email, m.phone, m.city, `daftar ${formatDate(m.created_at)}`]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </small>
+                </div>
               </div>
-              <Badge value={m.status} />
-              {m.id === admin.id ? null : (
-                <SafeForm
-                  action={updateMember.bind(null, m.id)}
-                  className="dash-row__actions"
-                >
-                  <select name="role" defaultValue={m.role} aria-label="Peran">
-                    <option value="member">Member</option>
-                    <option value="mitra">Mitra</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                  <select name="status" defaultValue={m.status} aria-label="Status">
-                    <option value="pending">Menunggu</option>
-                    <option value="active">Aktif</option>
-                    <option value="suspended">Diblokir</option>
-                  </select>
-                  <SubmitButton>Simpan</SubmitButton>
-                  {m.phone ? (
-                    <a
-                      className="btn btn-outline btn-sm"
-                      href={waTo(m.phone, `Halo ${m.full_name ?? ""}, dari masudeltamamy.com`)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      WA
-                    </a>
-                  ) : null}
-                </SafeForm>
-              )}
+              <div className="dash-row__foot">
+                <Badge value={m.status} />
+                {m.id === admin.id ? null : (
+                  <SafeForm
+                    action={updateMember.bind(null, m.id)}
+                    className="dash-row__actions"
+                  >
+                    <select name="role" defaultValue={m.role} aria-label="Peran">
+                      <option value="member">Member</option>
+                      <option value="mitra">Mitra</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                    <select name="status" defaultValue={m.status} aria-label="Status">
+                      <option value="pending">Menunggu</option>
+                      <option value="active">Aktif</option>
+                      <option value="suspended">Diblokir</option>
+                    </select>
+                    <SubmitButton>Simpan</SubmitButton>
+                    {m.phone ? (
+                      <a
+                        className="btn btn-outline btn-sm"
+                        href={waTo(m.phone, `Halo ${m.full_name ?? ""}, dari masudeltamamy.com`)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        WA
+                      </a>
+                    ) : null}
+                  </SafeForm>
+                )}
+              </div>
             </li>
           ))}
         </ul>

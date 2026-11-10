@@ -49,26 +49,34 @@ async function Trips() {
       {trips.length ? (
         <ul className="dash-list">
           {trips.map((t) => (
-            <li key={t.id} className="dash-row dash-row--wrap">
-              {t.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className="dash-thumb" src={t.image_url} alt="" />
-              ) : (
-                <span className="dash-thumb dash-thumb--empty">{t.sort}</span>
-              )}
-              <div className="dash-row__main">
-                <strong>{t.title}</strong>
-                <small>{[t.tag, t.duration, t.price_label].filter(Boolean).join(" · ")}</small>
+            <li key={t.id} className="dash-row dash-row--product">
+              <div className="dash-row__top">
+                {t.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img className="dash-thumb" src={t.image_url} alt="" />
+                ) : (
+                  <span className="dash-thumb dash-thumb--empty">{t.sort}</span>
+                )}
+                <div className="dash-row__main">
+                  <strong>{t.title}</strong>
+                  <small>{[t.tag, t.duration, t.price_label].filter(Boolean).join(" · ")}</small>
+                </div>
               </div>
-              {t.published ? null : <span className="badge badge--pending">Disembunyikan</span>}
-              <div className="dash-row__actions">
-                <SafeAction
-                  className="btn btn-danger btn-sm"
-                  confirm={`Hapus paket "${t.title}"?`}
-                  action={deleteTrip.bind(null, t.id)}
-                >
-                  Hapus
-                </SafeAction>
+              <div className="dash-row__foot">
+                {t.published ? (
+                  <span className="badge badge--approved">Tayang</span>
+                ) : (
+                  <span className="badge badge--pending">Disembunyikan</span>
+                )}
+                <div className="dash-row__actions">
+                  <SafeAction
+                    className="btn btn-danger btn-sm dash-row__danger"
+                    confirm={`Hapus paket "${t.title}"?`}
+                    action={deleteTrip.bind(null, t.id)}
+                  >
+                    Hapus
+                  </SafeAction>
+                </div>
               </div>
               <details className="dash-edit">
                 <summary>Edit</summary>
