@@ -1823,8 +1823,19 @@ html[data-intro="on"] body { overflow: hidden; }
 .btn-sm { padding: 0.45rem 0.85rem; font-size: 0.78rem; box-shadow: none; }
 .btn-danger { background: #fff; border: 1px solid rgba(180, 35, 24, 0.25); color: #b42318; }
 .btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
-.form-stack { display: grid; gap: 0.75rem; }
-.form-row { display: grid; gap: 0.75rem; }
+.form-stack {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+}
+.form-row {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+}
 
 @media (min-width: 640px) {
   .form-row { grid-template-columns: 1fr 1fr; }
@@ -1837,12 +1848,21 @@ html[data-intro="on"] body { overflow: hidden; }
   color: var(--teal-deep);
 }
 
-.form-stack label { display: grid; gap: 0.3rem; }
+.form-stack label {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  max-width: 100%;
+}
 
 .form-stack input:not([type="checkbox"]),
 .form-stack select,
 .form-stack textarea,
 .dash-row__actions select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0.7rem 0.85rem;
   border-radius: 0.8rem;
   border: 1px solid var(--line);
@@ -2210,6 +2230,9 @@ html[data-intro="on"] body { overflow: hidden; }
   gap: 0.65rem;
   align-items: stretch;
   padding: 0.75rem;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .dash-row__top {
   display: grid;
@@ -2290,6 +2313,9 @@ html[data-intro="on"] body { overflow: hidden; }
   border-radius: 1.2rem;
   border: 1px solid var(--line);
   background: #fff;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .dash-create > summary,
@@ -2310,6 +2336,8 @@ html[data-intro="on"] body { overflow: hidden; }
   padding: 0;
   border-radius: 0.85rem;
   background: var(--bg);
+  min-width: 0;
+  max-width: 100%;
 }
 .dash-edit > summary {
   display: block;
@@ -2321,12 +2349,38 @@ html[data-intro="on"] body { overflow: hidden; }
   padding: 0.15rem 0.75rem 0.85rem;
   border: 1px solid var(--line);
   background: #fff;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 .dash-edit[open] > summary {
   margin: 0 -0.15rem 0.65rem;
   background: var(--teal-soft);
 }
 .dash-edit .form-stack { padding-top: 0.15rem; }
+
+.dash-create[open],
+.dash-edit[open] {
+  overflow-x: hidden;
+}
+.dash-create .form-stack,
+.dash-edit .form-stack,
+.gallery-field,
+.rte {
+  min-width: 0;
+  max-width: 100%;
+}
+.dash .tox-tinymce {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+.dash .tox-editor-header,
+.dash .tox-toolbar-overlord,
+.dash .tox-toolbar__primary {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
 
 .dash-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; color: var(--muted); }
 
@@ -4881,6 +4935,14 @@ a.pj-card:hover { transform: translateY(-3px); }
   border-radius: 1rem;
   border: 1px solid var(--line);
   background: var(--card);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.hero-set input[type="url"] {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 .hero-set__head {
   display: flex;
@@ -5227,23 +5289,34 @@ a.pj-card:hover { transform: translateY(-3px); }
   }
   .dash-main {
     overflow-x: clip;
+    min-width: 0;
   }
   .dash-main .form-stack,
   .dash-main .dash-list,
   .dash-main .dash-card,
-  .dash-main .dash-create {
+  .dash-main .dash-create,
+  .dash-main .dash-edit,
+  .dash-main .dash-row--product {
     max-width: 100%;
+    min-width: 0;
   }
   .dash-main input,
   .dash-main select,
   .dash-main textarea {
+    width: 100%;
     max-width: 100%;
     box-sizing: border-box;
   }
   .dash .tox-editor-container,
   .dash .tox-edit-area,
-  .dash .tox-edit-area__iframe {
+  .dash .tox-edit-area__iframe,
+  .dash .tox-tinymce {
+    width: 100% !important;
     max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  .gallery-field__existing {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   /* Sembunyikan FAB Delta di area kerja form biar tidak nutup tombol simpan */
   body:has(.dash--app) .delta-fab {

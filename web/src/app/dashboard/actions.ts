@@ -3,6 +3,7 @@
 import { refresh, updateTag } from "next/cache";
 import { requireUser } from "@/lib/auth";
 import { sanitizeRichHtml } from "@/lib/html";
+import { collectUrls, removeUnusedMedia } from "@/lib/media-storage";
 import { createClient } from "@/lib/supabase/server";
 import { processUploadImage } from "@/lib/image";
 
@@ -108,8 +109,24 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
       if (user.status !== "active") throw new Error("Akun mitra belum diverifikasi.");
       const supabase = await createClient();
       const id = text(fd, "id");
+
+      let previousMedia: string[] = [];
+      if (id) {
+        const { data: prev } = await supabase
+          .from("products")
+          .select("image_url, gallery, description")
+          .eq("id", id)
+          .maybeSingle();
+        previousMedia = collectUrls(
+          prev?.image_url,
+          prev?.gallery as string[] | null,
+          prev?.description
+        );
+      }
+
       const gallery = await resolveGallery(supabase, user.id, fd);
       const cover = (await uploadImage(supabase, user.id, fd)) ?? gallery[0] ?? null;
+      const description = richText(fd, "description");
 
       const kind = pick(text(fd, "kind"), ["fisik", "digital"] as const, "fisik");
       const shipping_mode = pick(
@@ -122,7 +139,7 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
         kind,
         badge: orNull(text(fd, "badge", 40)),
         price_label: orNull(text(fd, "price_label", 80)),
-        description: richText(fd, "description"),
+        description,
         gallery,
         image_url: cover,
         shipping_mode,
@@ -139,6 +156,11 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
 
       if (id) {
         check((await supabase.from("products").update(row).eq("id", id)).error);
+        await removeUnusedMedia(
+          supabase,
+          previousMedia,
+          collectUrls(cover, gallery, description)
+        );
       } else {
         row.owner_id = user.role === "admin" ? null : user.id;
         row.status = user.role === "admin" ? "approved" : "pending";
@@ -198,7 +220,18 @@ export async function deleteProduct(id: string): Promise<ActionResult> {
   return act(async () => {
       await requireUser(["admin", "mitra"]);
       const supabase = await createClient();
+      const { data: prev } = await supabase
+        .from("products")
+        .select("image_url, gallery, description")
+        .eq("id", id)
+        .maybeSingle();
+      const media = collectUrls(
+        prev?.image_url,
+        prev?.gallery as string[] | null,
+        prev?.description
+      );
       check((await supabase.from("products").delete().eq("id", id)).error);
+      await removeUnusedMedia(supabase, media, []);
       updateTag("products");
       refresh();
   });
@@ -374,14 +407,30 @@ export async function saveTrip(fd: FormData): Promise<ActionResult> {
       const user = await requireUser(["admin"]);
       const supabase = await createClient();
       const id = text(fd, "id");
+
+      let previousMedia: string[] = [];
+      if (id) {
+        const { data: prev } = await supabase
+          .from("trips")
+          .select("image_url, gallery, summary")
+          .eq("id", id)
+          .maybeSingle();
+        previousMedia = collectUrls(
+          prev?.image_url,
+          prev?.gallery as string[] | null,
+          prev?.summary
+        );
+      }
+
       const gallery = await resolveGallery(supabase, user.id, fd);
       const cover = (await uploadImage(supabase, user.id, fd)) ?? gallery[0] ?? null;
+      const summary = richText(fd, "summary");
       const row: Record<string, unknown> = {
         title: text(fd, "title", 160),
         tag: orNull(text(fd, "tag", 40)),
         duration: orNull(text(fd, "duration", 60)),
         price_label: orNull(text(fd, "price_label", 80)),
-        summary: richText(fd, "summary"),
+        summary,
         published: fd.get("published") === "on",
         sort: Number(text(fd, "sort")) || 100,
         gallery,
@@ -394,6 +443,13 @@ export async function saveTrip(fd: FormData): Promise<ActionResult> {
           : await supabase.from("trips").insert(row)
         ).error
       );
+      if (id) {
+        await removeUnusedMedia(
+          supabase,
+          previousMedia,
+          collectUrls(cover, gallery, summary)
+        );
+      }
       updateTag("trips");
       refresh();
   });
@@ -403,7 +459,18 @@ export async function deleteTrip(id: string): Promise<ActionResult> {
   return act(async () => {
       await requireUser(["admin"]);
       const supabase = await createClient();
+      const { data: prev } = await supabase
+        .from("trips")
+        .select("image_url, gallery, summary")
+        .eq("id", id)
+        .maybeSingle();
+      const media = collectUrls(
+        prev?.image_url,
+        prev?.gallery as string[] | null,
+        prev?.summary
+      );
       check((await supabase.from("trips").delete().eq("id", id)).error);
+      await removeUnusedMedia(supabase, media, []);
       updateTag("trips");
       refresh();
   });
@@ -416,13 +483,29 @@ export async function saveProject(fd: FormData): Promise<ActionResult> {
       const user = await requireUser(["admin"]);
       const supabase = await createClient();
       const id = text(fd, "id");
+
+      let previousMedia: string[] = [];
+      if (id) {
+        const { data: prev } = await supabase
+          .from("projects")
+          .select("cover_url, gallery, summary")
+          .eq("id", id)
+          .maybeSingle();
+        previousMedia = collectUrls(
+          prev?.cover_url,
+          prev?.gallery as string[] | null,
+          prev?.summary
+        );
+      }
+
       const gallery = await resolveGallery(supabase, user.id, fd);
       const cover = (await uploadImage(supabase, user.id, fd)) ?? gallery[0] ?? null;
+      const summary = richText(fd, "summary");
       const row: Record<string, unknown> = {
         title: text(fd, "title", 160),
         category: pick(text(fd, "category"), ["web", "mobile", "research"] as const, "web"),
         tag: orNull(text(fd, "tag", 60)),
-        summary: richText(fd, "summary"),
+        summary,
         link: orNull(text(fd, "link", 300)),
         published: fd.get("published") === "on",
         sort: Number(text(fd, "sort")) || 100,
@@ -439,6 +522,13 @@ export async function saveProject(fd: FormData): Promise<ActionResult> {
           : await supabase.from("projects").insert(row)
         ).error
       );
+      if (id) {
+        await removeUnusedMedia(
+          supabase,
+          previousMedia,
+          collectUrls(cover, gallery, summary)
+        );
+      }
       updateTag("projects");
       refresh();
   });
@@ -448,7 +538,18 @@ export async function deleteProject(id: string): Promise<ActionResult> {
   return act(async () => {
       await requireUser(["admin"]);
       const supabase = await createClient();
+      const { data: prev } = await supabase
+        .from("projects")
+        .select("cover_url, gallery, summary")
+        .eq("id", id)
+        .maybeSingle();
+      const media = collectUrls(
+        prev?.cover_url,
+        prev?.gallery as string[] | null,
+        prev?.summary
+      );
       check((await supabase.from("projects").delete().eq("id", id)).error);
+      await removeUnusedMedia(supabase, media, []);
       updateTag("projects");
       refresh();
   });
@@ -461,6 +562,18 @@ export async function saveService(fd: FormData): Promise<ActionResult> {
       await requireUser(["admin"]);
       const supabase = await createClient();
       const id = text(fd, "id");
+
+      let previousMedia: string[] = [];
+      if (id) {
+        const { data: prev } = await supabase
+          .from("services")
+          .select("blurb")
+          .eq("id", id)
+          .maybeSingle();
+        previousMedia = collectUrls(prev?.blurb);
+      }
+
+      const blurb = richText(fd, "blurb");
       const items = text(fd, "items", 2000)
         .split("\n")
         .map((line) => line.trim())
@@ -468,7 +581,7 @@ export async function saveService(fd: FormData): Promise<ActionResult> {
         .slice(0, 20);
       const row: Record<string, unknown> = {
         title: text(fd, "title", 160),
-        blurb: richText(fd, "blurb"),
+        blurb,
         items,
         accent: pick(text(fd, "accent"), ["teal", "orange", "ink"] as const, "teal"),
         published: fd.get("published") === "on",
@@ -481,6 +594,7 @@ export async function saveService(fd: FormData): Promise<ActionResult> {
           : await supabase.from("services").insert(row)
         ).error
       );
+      if (id) await removeUnusedMedia(supabase, previousMedia, collectUrls(blurb));
       updateTag("services");
       refresh();
   });
@@ -490,7 +604,14 @@ export async function deleteService(id: string): Promise<ActionResult> {
   return act(async () => {
       await requireUser(["admin"]);
       const supabase = await createClient();
+      const { data: prev } = await supabase
+        .from("services")
+        .select("blurb")
+        .eq("id", id)
+        .maybeSingle();
+      const media = collectUrls(prev?.blurb);
       check((await supabase.from("services").delete().eq("id", id)).error);
+      await removeUnusedMedia(supabase, media, []);
       updateTag("services");
       refresh();
   });
@@ -559,11 +680,19 @@ export async function saveHeroSettings(fd: FormData): Promise<ActionResult> {
   return act(async () => {
     await requireUser(["admin"]);
     const supabase = await createClient();
+    const { data: prevRows } = await supabase
+      .from("site_settings")
+      .select("key, value")
+      .in("key", [...HERO_KEYS]);
+    const previousMedia = collectUrls((prevRows ?? []).map((r) => r.value));
+
+    const nextValues: string[] = [];
     for (const key of HERO_KEYS) {
       const value = orNull(text(fd, key, 2000));
       if (value === null) {
         check((await supabase.from("site_settings").delete().eq("key", key)).error);
       } else {
+        nextValues.push(value);
         check(
           (
             await supabase.from("site_settings").upsert(
@@ -574,6 +703,7 @@ export async function saveHeroSettings(fd: FormData): Promise<ActionResult> {
         );
       }
     }
+    await removeUnusedMedia(supabase, previousMedia, collectUrls(nextValues));
     updateTag("site-settings");
     refresh();
   });
