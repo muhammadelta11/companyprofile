@@ -12,7 +12,8 @@ type Note = {
 };
 
 /**
- * Lonceng realtime untuk admin: produk pending, pendaftar, masukan, pesanan baru.
+ * Lonceng realtime untuk admin:
+ * produk pending, pendaftar, masukan, pesanan, komentar produk, Delta belum terjawab.
  * Butuh supabase/realtime-admin.sql + Realtime aktif di project.
  */
 export function AdminNotify() {
@@ -25,10 +26,12 @@ export function AdminNotify() {
   const push = useCallback((note: Note) => {
     if (seen.current.has(note.id)) return;
     seen.current.add(note.id);
-    setNotes((prev) => [note, ...prev].slice(0, 12));
+    setNotes((prev) => [note, ...prev].slice(0, 16));
     setToast(note.title);
     try {
-      const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!audioCtx.current) audioCtx.current = new Ctx();
       const ctx = audioCtx.current;
       const o = ctx.createOscillator();
@@ -131,6 +134,66 @@ export function AdminNotify() {
           });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "product_comments" },
+        (payload) => {
+          const row = payload.new as { id?: string; product_id?: string; body?: string };
+          if (!row.id) return;
+          const preview = (row.body ?? "").trim().slice(0, 48);
+          push({
+            id: `c-${row.id}`,
+            title: `Komentar produk: ${preview || "baru"}${preview.length >= 48 ? "…" : ""}`,
+            href: row.product_id ? `/market/${row.product_id}` : "/dashboard/produk",
+            at: Date.now(),
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "delta_logs" },
+        (payload) => {
+          const row = payload.new as {
+            id?: string;
+            question?: string;
+            confidence?: string;
+          };
+          if (!row.id || row.confidence !== "low") return;
+          const q = (row.question ?? "").trim().slice(0, 48);
+          push({
+            id: `d-${row.id}`,
+            title: `Delta belum terjawab: ${q || "pertanyaan"}${q.length >= 48 ? "…" : ""}`,
+            href: "/dashboard/delta",
+            at: Date.now(),
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        (payload) => {
+          const row = payload.new as {
+            id?: string;
+            full_name?: string | null;
+            role?: string;
+            status?: string;
+          };
+          const old = payload.old as { status?: string; role?: string };
+          if (
+            row.id &&
+            row.role === "mitra" &&
+            row.status === "pending" &&
+            old.status !== "pending"
+          ) {
+            push({
+              id: `m-${row.id}-${Date.now()}`,
+              title: `Mitra menunggu aktivasi: ${row.full_name ?? "akun"}`,
+              href: "/dashboard/anggota",
+              at: Date.now(),
+            });
+          }
+        }
+      )
       .subscribe();
 
     return () => {
@@ -174,7 +237,9 @@ export function AdminNotify() {
           ) : (
             <p className="dash-bell__empty">Belum ada notifikasi sesi ini.</p>
           )}
-          <p className="dash-bell__hint">Update otomatis saat ada request masuk.</p>
+          <p className="dash-bell__hint">
+            Update otomatis: produk, pendaftar, masukan, pesanan, komentar, Delta.
+          </p>
         </div>
       ) : null}
 
