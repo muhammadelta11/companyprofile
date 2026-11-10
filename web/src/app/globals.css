@@ -3713,7 +3713,7 @@ a.pj-card:hover { transform: translateY(-3px); }
   --mh-muted: #64748b;
   --mh-line: rgba(15, 23, 42, 0.08);
   background: var(--mh-canvas);
-  padding: 0 0 1.5rem;
+  padding: 0.65rem 0 1.5rem;
   overflow-x: clip;
 }
 .mhome__shell {
@@ -3735,47 +3735,6 @@ a.pj-card:hover { transform: translateY(-3px); }
   background:
     radial-gradient(ellipse 90% 80% at 100% 0%, rgba(232, 155, 30, 0.35), transparent 55%),
     linear-gradient(160deg, #07111f, #122033 70%, #0f2744);
-}
-.mhome-hero--visual {
-  width: 100%;
-  max-width: none;
-  margin: 0 0 0.75rem;
-  padding: 0;
-  border-radius: 0;
-  background: #07111f;
-  color: #f8fafc;
-}
-.mhome-hero__bleed {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  background: #0b1220;
-  aspect-ratio: 1200 / 630;
-  max-height: min(52vw, 28rem);
-}
-.mhome-hero__img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  animation: mhome-hero-in 0.7s var(--ease) both;
-}
-@keyframes mhome-hero-in {
-  from { opacity: 0; transform: scale(1.04); }
-  to { opacity: 1; transform: scale(1); }
-}
-.mhome-hero__panel {
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 26.5rem;
-  margin-inline: auto;
-  padding: 1rem 0.85rem 1.15rem;
-  animation: mhome-panel-in 0.55s var(--ease) 0.12s both;
-}
-@keyframes mhome-panel-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 .mhome-hero__kicker {
   margin: 0 0 0.4rem;
@@ -3806,8 +3765,6 @@ a.pj-card:hover { transform: translateY(-3px); }
   gap: 0.45rem;
   margin-top: 1rem;
 }
-.mhome-hero--visual .mhome-hero__kicker { color: #fbbf24; }
-.mhome-hero--visual .mhome-hero__lead { color: rgba(248, 250, 252, 0.78); }
 .mhome-btn {
   display: inline-flex;
   align-items: center;
@@ -5427,17 +5384,10 @@ a.pj-card:hover { transform: translateY(-3px); }
     gap: 1rem;
   }
 
-  .mhome-hero:not(.mhome-hero--visual),
+  .mhome-hero,
   .apage-hero {
     padding: 1.45rem 1.35rem 1.5rem;
     border-radius: 1.4rem;
-  }
-  .mhome-hero--visual .mhome-hero__bleed {
-    max-height: min(48vw, 22rem);
-  }
-  .mhome-hero--visual .mhome-hero__panel {
-    max-width: 42rem;
-    padding-inline: 1.15rem;
   }
   .mhome-hero__title,
   .apage-hero__title {
@@ -5493,14 +5443,6 @@ a.pj-card:hover { transform: translateY(-3px); }
     gap: 1.15rem;
   }
 
-  .mhome-hero--visual .mhome-hero__bleed {
-    max-height: min(42vw, 28rem);
-  }
-  .mhome-hero--visual .mhome-hero__panel {
-    max-width: 64rem;
-    padding-inline: 1.35rem;
-    padding-block: 1.25rem 1.4rem;
-  }
   .mhome-hero__title {
     max-width: 18ch;
   }

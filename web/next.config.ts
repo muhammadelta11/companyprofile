@@ -56,6 +56,14 @@ const nextConfig: NextConfig = {
           ...security,
         ],
       },
+      // OG/share crawler: gambar tanpa CSP ketat + cache panjang.
+      {
+        source: "/og-default.jpg",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+        ],
+      },
       {
         source: "/:path*",
         headers: security,

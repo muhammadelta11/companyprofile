@@ -7,6 +7,8 @@ import { PWA_HEAD_SCRIPT } from "@/components/pwa/pwa-config";
 import {
   absoluteUrl,
   DEFAULT_OG_IMAGE,
+  OG_IMAGE_HEIGHT,
+  OG_IMAGE_WIDTH,
   organizationJsonLd,
   SITE_URL,
   websiteJsonLd,
@@ -22,9 +24,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 const DEFAULT_OG = {
   url: absoluteUrl(DEFAULT_OG_IMAGE),
-  width: 1200,
-  height: 630,
+  secureUrl: absoluteUrl(DEFAULT_OG_IMAGE),
+  width: OG_IMAGE_WIDTH,
+  height: OG_IMAGE_HEIGHT,
   alt: "Banner utama Mas'ud El-Tamamy — Digital, Market, dan Paket Wisata",
+  type: "image/jpeg",
 };
 
 export const metadata: Metadata = {

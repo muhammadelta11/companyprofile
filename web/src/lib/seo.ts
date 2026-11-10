@@ -4,7 +4,10 @@ import { SITE } from "@/data/site";
 export const SITE_URL = "https://masudeltamamy.com";
 
 /** Gambar default untuk share / Open Graph (banner utama situs). */
-export const DEFAULT_OG_IMAGE = "/og-default.jpg";
+export const DEFAULT_OG_IMAGE = "/og-default.jpg?v=2";
+/** Dimensi aktual file public/og-default.jpg (bukan tebakan 1200×630). */
+export const OG_IMAGE_WIDTH = 1024;
+export const OG_IMAGE_HEIGHT = 576;
 
 /** Buang HTML → teks meta/deskripsi. */
 export function plainText(html: string | null | undefined, max = 160) {
@@ -73,13 +76,17 @@ export function pageMetadata({
     `Platform bisnis ${SITE.brand}: jasa digital, market produk, dan paket wisata.`;
   const url = absoluteUrl(path);
   const ogList = uniqueImages(image, images);
-  const ogImages = ogList.map((urlAbs, i) => ({
-    url: urlAbs,
-    width: 1200,
-    height: 630,
-    alt: i === 0 ? title : `${title} — foto ${i + 1}`,
-    type: "image/jpeg" as const,
-  }));
+  const ogImages = ogList.map((urlAbs, i) => {
+    const isDefault = urlAbs.includes("/og-default.jpg");
+    return {
+      url: urlAbs,
+      secureUrl: urlAbs,
+      width: isDefault ? OG_IMAGE_WIDTH : 1200,
+      height: isDefault ? OG_IMAGE_HEIGHT : 630,
+      alt: i === 0 ? title : `${title} — foto ${i + 1}`,
+      type: "image/jpeg" as const,
+    };
+  });
 
   return {
     title,

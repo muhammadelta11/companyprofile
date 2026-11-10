@@ -2,13 +2,14 @@ import { AppHero } from "@/components/home/AppHero";
 import { QuickActions } from "@/components/home/QuickActions";
 import { HomeRails } from "@/components/home/HomeRails";
 import { getProducts, getProjects, getTrips } from "@/lib/content";
-import { pageMetadata } from "@/lib/seo";
+import { DEFAULT_OG_IMAGE, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Mas'ud El-Tamamy — Digital · Market · Wisata",
   description:
     "Platform bisnis Mas'ud El-Tamamy: jasa digital, market produk, dan paket wisata. Order & konsultasi via WhatsApp, dibantu Delta AI.",
   path: "/",
+  image: DEFAULT_OG_IMAGE,
 });
 
 export default async function HomePage() {
@@ -20,8 +21,8 @@ export default async function HomePage() {
 
   return (
     <div className="mhome">
-      <AppHero />
       <div className="mhome__shell">
+        <AppHero />
         <QuickActions />
         <HomeRails
           products={products.slice(0, 6)}
