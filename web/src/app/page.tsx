@@ -20,8 +20,8 @@ export default async function HomePage() {
 
   return (
     <div className="mhome">
+      <AppHero />
       <div className="mhome__shell">
-        <AppHero />
         <QuickActions />
         <HomeRails
           products={products.slice(0, 6)}
