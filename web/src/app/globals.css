@@ -2569,6 +2569,12 @@ button { -webkit-tap-highlight-color: transparent; }
   cursor: pointer;
 }
 .sheet__action--primary { background: var(--teal); border-color: var(--teal); color: #fff; }
+.sheet__action--feedback {
+  grid-column: 1 / -1;
+  background: #fff7ed;
+  border-color: rgba(234, 88, 12, 0.25);
+  color: #c2410c;
+}
 .sheet__foot { margin: 0.9rem 0 0; text-align: center; font-size: 0.74rem; color: var(--muted); }
 
 html.sheet-open body { overflow: hidden; }
@@ -4106,7 +4112,8 @@ a.pj-card:hover { transform: translateY(-3px); }
 .mhome-stack { display: grid; gap: 0.5rem; }
 .mhome-delta,
 .mhome-wa,
-.mhome-about {
+.mhome-about,
+.mhome-feedback {
   display: flex;
   align-items: center;
   gap: 0.7rem;
@@ -4122,7 +4129,8 @@ a.pj-card:hover { transform: translateY(-3px); }
 }
 .mhome-delta > span:nth-child(2),
 .mhome-wa > span:first-child,
-.mhome-about > span:nth-child(2) {
+.mhome-about > span:nth-child(2),
+.mhome-feedback > span:nth-child(2) {
   display: grid;
   gap: 0.05rem;
   flex: 1;
@@ -4130,10 +4138,12 @@ a.pj-card:hover { transform: translateY(-3px); }
 }
 .mhome-delta strong,
 .mhome-wa strong,
-.mhome-about strong { font-size: 0.88rem; }
+.mhome-about strong,
+.mhome-feedback strong { font-size: 0.88rem; }
 .mhome-delta small,
 .mhome-wa small,
-.mhome-about small { font-size: 0.72rem; color: var(--mh-muted); }
+.mhome-about small,
+.mhome-feedback small { font-size: 0.72rem; color: var(--mh-muted); }
 .mhome-delta {
   background: #0f172a;
   border-color: transparent;
@@ -4149,7 +4159,8 @@ a.pj-card:hover { transform: translateY(-3px); }
 }
 .mhome-delta__go,
 .mhome-wa__go,
-.mhome-about__go { flex: none; font-weight: 800; opacity: 0.65; }
+.mhome-about__go,
+.mhome-feedback__go { flex: none; font-weight: 800; opacity: 0.65; }
 .mhome-wa { background: #ecfdf5; border-color: rgba(16, 185, 129, 0.22); }
 .mhome-wa__go { color: #059669; }
 .mhome-about__photo {
@@ -4159,6 +4170,21 @@ a.pj-card:hover { transform: translateY(-3px); }
   border-radius: 0.7rem;
   object-fit: cover;
 }
+.mhome-feedback {
+  background: #fff7ed;
+  border-color: rgba(234, 88, 12, 0.2);
+}
+.mhome-feedback__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 0.7rem;
+  background: #ffedd5;
+  color: #c2410c;
+}
+.mhome-feedback__go { color: #c2410c; }
 /* -------------------------------------------
    App page shell ? konsisten dengan beranda
    ------------------------------------------- */

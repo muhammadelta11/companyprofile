@@ -20,6 +20,7 @@ const MORE: { href: string; label: string; text: string; icon: IconName }[] = [
   { href: "/proyek", label: "Proyek", text: "Portofolio karya", icon: "folder" },
   { href: "/gabung", label: "Gabung", text: "Member · mitra · partner", icon: "userPlus" },
   { href: "/tentang", label: "Tentang", text: "Kenalan dengan Mas'ud", icon: "user" },
+  { href: "/masukan", label: "Masukan", text: "Lapor bug · usulan · keluhan", icon: "mail" },
   { href: "/dashboard", label: "Akun", text: "Masuk / dashboard", icon: "dashboard" },
 ];
 
@@ -160,6 +161,14 @@ export function BottomNav({ onOpenDelta }: { onOpenDelta: () => void }) {
                   <Icon name="chat" size={20} />
                   WhatsApp
                 </a>
+                <Link
+                  href="/masukan"
+                  className="sheet__action sheet__action--feedback"
+                  onClick={close}
+                >
+                  <Icon name="mail" size={20} />
+                  Kirim masukan
+                </Link>
               </div>
 
               {installMode === "prompt" ? (

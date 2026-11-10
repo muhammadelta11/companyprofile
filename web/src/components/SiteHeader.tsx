@@ -12,6 +12,7 @@ const LINKS = [
   { href: "/proyek", label: "Proyek" },
   { href: "/tentang", label: "Tentang" },
   { href: "/gabung", label: "Gabung" },
+  { href: "/masukan", label: "Masukan" },
 ];
 
 export function SiteHeader({ onOpenDelta }: { onOpenDelta?: () => void }) {

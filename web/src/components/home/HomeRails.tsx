@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ProductItem, ProjectItem, TripItem } from "@/lib/content";
 import { htmlToPlain } from "@/lib/html";
 import { SITE, waLink } from "@/data/site";
+import { Icon } from "@/components/Icon";
 import { AskDeltaRow } from "./AskDeltaRow";
 
 type Props = {
@@ -126,6 +127,16 @@ export function HomeRails({ products, trips, projects }: Props) {
             <small>Profil founder → Tentang</small>
           </span>
           <span className="mhome-about__go" aria-hidden="true">→</span>
+        </Link>
+        <Link className="mhome-feedback" href="/masukan">
+          <span className="mhome-feedback__icon" aria-hidden="true">
+            <Icon name="mail" size={18} />
+          </span>
+          <span>
+            <strong>Kirim masukan</strong>
+            <small>Lapor bug, usulan, atau keluhan</small>
+          </span>
+          <span className="mhome-feedback__go" aria-hidden="true">→</span>
         </Link>
       </div>
     </div>
