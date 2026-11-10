@@ -1,6 +1,6 @@
 # masudel-tamamy
 
-Portofolio **Muhammad Mas'ud** (`masudel-tamamy`) — web/sistem, riset, freelance, dan open trip.
+Portofolio **Muhammad Mas'ud** (`masudel-tamamy`) — web/sistem, riset, freelance, dan wisata.
 
 Live: https://muhammadelta11.github.io/companyprofile/
 

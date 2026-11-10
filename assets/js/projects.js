@@ -138,5 +138,31 @@ window.PORTFOLIO_PROJECTS = [
     summary: "Proyek analisis testimoni.",
     link: "",
     images: []
+  },
+  {
+    id: "mismaariftempursari",
+    title: "MIS Ma'arif Tempursari",
+    category: "web",
+    tag: "Website Sekolah",
+    summary: "Website resmi MIS Ma'arif Tempursari (mismaariftempursari.sch.id).",
+    link: "https://mismaariftempursari.sch.id",
+    images: [
+      "./assets/img/projects/mismaariftempursari/1.jpg",
+      "./assets/img/projects/mismaariftempursari/2.jpg"
+    ]
+  },
+  {
+    id: "hmjti-unwahas",
+    title: "HMJTI Unwahas",
+    category: "web",
+    tag: "Organisasi · Web",
+    summary: "Website Himpunan Mahasiswa Jurusan Teknik Informatika Unwahas.",
+    link: "https://hmjti.unwahas.ac.id",
+    images: [
+      "./assets/img/projects/hmjti-unwahas/1.jpg",
+      "./assets/img/projects/hmjti-unwahas/2.jpg",
+      "./assets/img/projects/hmjti-unwahas/3.jpg",
+      "./assets/img/projects/hmjti-unwahas/4.jpg"
+    ]
   }
 ];

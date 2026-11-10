@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#f4f7ff" />
+    <title>Sedang offline · Mas'ud El-Tamamy</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 1.5rem;
+        color: #0b1220;
+        background:
+          radial-gradient(ellipse 80% 50% at 0% -10%, rgba(29, 78, 216, 0.18), transparent 55%),
+          radial-gradient(ellipse 60% 40% at 100% 0%, rgba(14, 165, 233, 0.14), transparent 50%),
+          #f4f7ff;
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        text-align: center;
+      }
+      main { max-width: 22rem; }
+      svg { width: 5.5rem; height: 5.5rem; filter: drop-shadow(0 18px 30px rgba(29, 78, 216, 0.3)); }
+      h1 { margin: 1.25rem 0 0.4rem; font-size: 1.45rem; line-height: 1.2; }
+      p { margin: 0; color: #56637f; font-size: 0.95rem; line-height: 1.55; }
+      button {
+        margin-top: 1.5rem;
+        padding: 0.9rem 1.6rem;
+        border: 0;
+        border-radius: 999px;
+        background: #1d4ed8;
+        color: #fff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 12px 26px rgba(29, 78, 216, 0.3);
+      }
+      button:active { transform: scale(0.97); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <svg viewBox="0 0 512 512" aria-hidden="true">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2563eb" />
+            <stop offset="1" stop-color="#0b2a6f" />
+          </linearGradient>
+        </defs>
+        <rect width="512" height="512" rx="116" fill="url(#bg)" />
+        <circle cx="256" cy="256" r="178" fill="none" stroke="#fff" stroke-opacity="0.18" stroke-width="6" />
+        <circle cx="382" cy="130" r="20" fill="#7dd3fc" />
+        <path d="M166 340V172l90 94 90-94v168" fill="none" stroke="#fff" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+      <h1>Kamu sedang offline</h1>
+      <p>Halaman ini belum tersimpan di perangkat. Sambungkan internet, lalu coba lagi.</p>
+      <button type="button" onclick="location.reload()">Coba lagi</button>
+    </main>
+    <script>
+      addEventListener("online", function () { location.reload(); });
+    </script>
+  </body>
+</html>

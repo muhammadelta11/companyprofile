@@ -1,0 +1,112 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { Role } from "@/lib/auth";
+import { signOut } from "../masuk/actions";
+import { AdminNotify } from "@/components/dashboard/AdminNotify";
+import { DashToast } from "@/components/dashboard/DashToast";
+
+type NavItem = { href: string; label: string; hint?: string; roles: Role[] };
+type NavGroup = { title: string; items: NavItem[] };
+
+const GROUPS: NavGroup[] = [
+  {
+    title: "Utama",
+    items: [
+      { href: "/dashboard", label: "Beranda", roles: ["admin", "mitra", "member"] },
+      { href: "/dashboard/pesanan", label: "Pesanan", roles: ["admin", "mitra", "member"] },
+    ],
+  },
+  {
+    title: "Cek dulu",
+    items: [
+      { href: "/dashboard/produk", label: "Produk", roles: ["admin", "mitra"] },
+      { href: "/dashboard/pendaftar", label: "Pendaftar", roles: ["admin"] },
+      { href: "/dashboard/masukan", label: "Masukan", roles: ["admin"] },
+      { href: "/dashboard/jadi-mitra", label: "Jadi mitra", roles: ["member"] },
+    ],
+  },
+  {
+    title: "Website",
+    items: [
+      { href: "/dashboard/layanan", label: "Layanan", roles: ["admin"] },
+      { href: "/dashboard/wisata", label: "Wisata", roles: ["admin"] },
+      { href: "/dashboard/proyek", label: "Proyek", roles: ["admin"] },
+      { href: "/dashboard/anggota", label: "Anggota", roles: ["admin"] },
+      { href: "/dashboard/tampilan", label: "Tampilan", roles: ["admin"] },
+      { href: "/dashboard/delta", label: "Delta", roles: ["admin"] },
+    ],
+  },
+  {
+    title: "Akun",
+    items: [{ href: "/dashboard/profil", label: "Profil", roles: ["admin", "mitra", "member"] }],
+  },
+];
+
+const ROLE_LABEL: Record<Role, string> = {
+  admin: "Admin",
+  mitra: "Penjual",
+  member: "Member",
+};
+
+export function DashNav({ name, role }: { name: string; role: Role }) {
+  const path = usePathname();
+  const flat = GROUPS.flatMap((g) => g.items.filter((i) => i.roles.includes(role)));
+
+  return (
+    <aside className="dash-side">
+      <div className="dash-user">
+        <span className="dash-avatar">{name.slice(0, 1).toUpperCase()}</span>
+        <div>
+          <strong>{name}</strong>
+          <small>{ROLE_LABEL[role]}</small>
+        </div>
+        {role === "admin" ? <AdminNotify /> : null}
+        <form action={signOut} className="dash-side__logout">
+          <button className="dash-logout" type="submit">
+            Keluar
+          </button>
+        </form>
+      </div>
+
+      {/* Mobile: satu baris chip; Desktop: grup */}
+      <nav className="dash-nav dash-nav--chips" aria-label="Menu cepat">
+        {flat.map((l) => (
+          <Link key={`m-${l.href}`} href={l.href} className={path === l.href ? "is-active" : undefined}>
+            {l.label}
+          </Link>
+        ))}
+      </nav>
+
+      <nav className="dash-nav dash-nav--groups" aria-label="Menu dashboard">
+        {GROUPS.map((group) => {
+          const items = group.items.filter((i) => i.roles.includes(role));
+          if (!items.length) return null;
+          return (
+            <div key={group.title} className="dash-nav__group">
+              <p className="dash-nav__title">{group.title}</p>
+              {items.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={path === l.href ? "is-active" : undefined}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          );
+        })}
+      </nav>
+
+      <form action={signOut} className="dash-side__logout-desk">
+        <button className="dash-logout" type="submit">
+          Keluar
+        </button>
+      </form>
+
+      <DashToast />
+    </aside>
+  );
+}

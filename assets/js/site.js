@@ -70,7 +70,7 @@
           ? `<img src="${cover}" alt="${p.title}" loading="lazy" />`
           : `<div class="project-card__placeholder">${initials(p.title)}</div>`;
         return `
-          <button class="project-card reveal is-visible" type="button" data-id="${p.id}">
+          <button class="project-card${p.category === "mobile" ? " project-card--mobile" : ""} reveal is-visible" type="button" data-id="${p.id}">
             <div class="project-card__media">
               ${media}
               <span class="project-card__count">${photoCountLabel(p.images)}</span>
@@ -89,6 +89,15 @@
         const project = projects.find((p) => p.id === card.dataset.id);
         if (project) openLightbox(project, "project");
       });
+      const coverImg = card.querySelector(".project-card__media img");
+      if (!coverImg) return;
+      const markTall = () => {
+        if (coverImg.naturalHeight > coverImg.naturalWidth * 1.2) {
+          card.classList.add("project-card--mobile");
+        }
+      };
+      if (coverImg.complete) markTall();
+      else coverImg.addEventListener("load", markTall);
     });
   };
 
@@ -139,6 +148,7 @@
     const fileHint = activeKind === "trip" ? "trips.js" : "projects.js";
 
     if (!images.length) {
+      mainEl.classList.remove("gallery__main--mobile");
       mainEl.innerHTML = `
         <div class="gallery__empty">
           <strong>${initials(activeItem.title)}</strong>
@@ -154,11 +164,26 @@
     prevBtn.hidden = images.length < 2;
     nextBtn.hidden = images.length < 2;
     const src = images[imageIndex];
+    const isMobile = activeKind === "project" && activeItem.category === "mobile";
+    mainEl.classList.toggle("gallery__main--mobile", isMobile);
+    mainEl.classList.remove("gallery__main--portrait");
     mainEl.innerHTML = `<img src="${src}" alt="${activeItem.title} — foto ${imageIndex + 1}" />`;
+    const mainImg = mainEl.querySelector("img");
+    const markPortrait = () => {
+      if (!mainImg?.naturalWidth) return;
+      const tall = mainImg.naturalHeight > mainImg.naturalWidth * 1.2;
+      mainEl.classList.toggle("gallery__main--portrait", tall && !isMobile);
+      thumbsEl.querySelectorAll("button").forEach((btn) => {
+        btn.classList.toggle("gallery__thumb--mobile", tall || isMobile);
+      });
+    };
+    if (mainImg.complete) markPortrait();
+    else mainImg.addEventListener("load", markPortrait);
+
     thumbsEl.innerHTML = images
       .map(
         (img, i) => `
-        <button type="button" class="${i === imageIndex ? "is-active" : ""}" data-index="${i}" aria-label="Foto ${i + 1}">
+        <button type="button" class="${i === imageIndex ? "is-active" : ""}${isMobile ? " gallery__thumb--mobile" : ""}" data-index="${i}" aria-label="Foto ${i + 1}">
           <img src="${img}" alt="" />
         </button>`
       )
@@ -189,7 +214,7 @@
         .map((h) => `<li class="chip">${h}</li>`)
         .join("");
       actionsEl.innerHTML = `
-        <a class="btn btn--trip btn--sm" href="https://wa.me/6285647121046?text=${encodeURIComponent("Halo, saya tertarik paket " + item.title + ". Mohon info detail & ketersediaan.")}" target="_blank" rel="noopener noreferrer">Booking via WA</a>
+        <a class="btn btn--nature btn--sm" href="https://wa.me/6285647121046?text=${encodeURIComponent("Halo, saya tertarik paket " + item.title + ". Mohon info detail & ketersediaan.")}" target="_blank" rel="noopener noreferrer">Booking via WA</a>
         <a class="btn btn--ghost btn--sm" href="https://mbareptour.id" target="_blank" rel="noopener noreferrer">mbareptour.id</a>`;
     } else {
       meta.hidden = true;
