@@ -3,16 +3,23 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppPage, AppPageHero } from "@/components/AppPage";
 import { AppPageFallback } from "@/components/AppPageFallback";
+import { ShareBar } from "@/components/ShareBar";
 import { SITE, waLink } from "@/data/site";
 import { getHeroImage, getSiteSettings } from "@/lib/site-settings";
-
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata = pageMetadata({
-  title: "Tentang",
-  description: `Tentang Muhammad Mas'ud dan brand ${SITE.brand} — digital, market, dan wisata.`,
-  path: "/tentang",
-});
+export async function generateMetadata() {
+  const [hero, settings] = await Promise.all([
+    getHeroImage("tentang"),
+    getSiteSettings(),
+  ]);
+  return pageMetadata({
+    title: "Tentang",
+    description: `Tentang Muhammad Mas'ud dan brand ${SITE.brand} — digital, market, dan wisata.`,
+    path: "/tentang",
+    image: settings.portrait_tentang || hero || "/portrait.jpg",
+  });
+}
 
 const PATHS = [
   { href: "/layanan", label: "Layanan", hint: "Jasa & sistem" },
@@ -106,6 +113,13 @@ async function TentangContent() {
       </AppPageHero>
 
       <div className="apage-body tentang-body">
+        <div className="apage-share">
+          <ShareBar
+            title={`Tentang ${SITE.brand}`}
+            path="/tentang"
+            text={`Kenalan dengan Muhammad Mas'ud dan brand ${SITE.brand}`}
+          />
+        </div>
         <section className="ab-story ab-story--rich">
           <p className="ab-kicker">Visi</p>
           <h2>Platform yang bisa dipakai sehari-hari</h2>

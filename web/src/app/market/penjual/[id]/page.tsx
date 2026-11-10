@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppPage } from "@/components/AppPage";
 import { OrderLink } from "@/components/OrderLink";
+import { ShareBar } from "@/components/ShareBar";
 import { getProductsBySeller, getPublicSeller } from "@/lib/content";
 import { sellerInitials, sellerLabel } from "@/lib/product";
 import { pageMetadata } from "@/lib/seo";
@@ -15,10 +16,13 @@ export async function generateMetadata({ params }: Props) {
   const seller = await getPublicSeller(id);
   if (!seller) return { title: "Penjual" };
   const name = seller.full_name?.trim() || (seller.kind === "official" ? "Official" : "Mitra");
+  const products = await getProductsBySeller(id);
+  const cover = products.find((p) => p.image_url)?.image_url ?? null;
   return pageMetadata({
     title: `${name} · Market`,
     description: `Etalase ${name} di Market Mas'ud El-Tamamy — ${seller.productCount} produk. Order via WhatsApp.`,
     path: `/market/penjual/${id}`,
+    image: cover,
   });
 }
 
@@ -80,6 +84,13 @@ async function PenjualDetail({ params }: Props) {
                 .filter(Boolean)
                 .join(" · ")}
             </small>
+            <div className="mk-seller__actions">
+              <ShareBar
+                title={name}
+                path={`/market/penjual/${id}`}
+                text={`Lihat etalase ${name} di Market Mas'ud El-Tamamy`}
+              />
+            </div>
           </div>
         </header>
 

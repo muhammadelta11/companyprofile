@@ -10,12 +10,18 @@ import { OrderLink } from "@/components/OrderLink";
 import { ProductComments } from "@/components/market/ProductComments";
 import { ProductViewBeacon } from "@/components/market/ProductViewBeacon";
 import { RichHtml } from "@/components/RichHtml";
+import { ShareBar } from "@/components/ShareBar";
 import { productExtra } from "@/data/catalog-extra";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
 import { sellerHref, sellerInitials, sellerLabel, shippingLabel } from "@/lib/product";
-import { breadcrumbJsonLd, pageMetadata, productJsonLd } from "@/lib/seo";
+import {
+  breadcrumbJsonLd,
+  imageObjectsJsonLd,
+  pageMetadata,
+  productJsonLd,
+} from "@/lib/seo";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -24,6 +30,7 @@ export async function generateMetadata({ params }: Props) {
   const product = await getProduct(id);
   if (!product) return { title: "Produk" };
   const seller = sellerLabel(product);
+  const gallery = mergeGallery(product.image_url, product.gallery);
   return pageMetadata({
     title: product.title,
     description:
@@ -31,6 +38,7 @@ export async function generateMetadata({ params }: Props) {
       `${product.title} dari ${seller} di Market Mas'ud El-Tamamy. Order via WhatsApp.`,
     path: `/market/${product.id}`,
     image: product.image_url,
+    images: gallery,
   });
 }
 
@@ -90,6 +98,8 @@ async function MarketDetail({ params }: Props) {
   const sellerName = sellerLabel(product);
   const initials = sellerInitials(sellerName);
   const profileHref = sellerHref(product);
+  const images = mergeGallery(product.image_url, product.gallery);
+  const path = `/market/${product.id}`;
 
   return (
     <AppPage>
@@ -100,6 +110,7 @@ async function MarketDetail({ params }: Props) {
             title: product.title,
             description: product.description,
             image: product.image_url,
+            images,
             priceLabel: product.price_label,
             kind: product.kind,
             sellerName,
@@ -107,8 +118,9 @@ async function MarketDetail({ params }: Props) {
           breadcrumbJsonLd([
             { name: "Beranda", path: "/" },
             { name: "Market", path: "/market" },
-            { name: product.title, path: `/market/${product.id}` },
+            { name: product.title, path },
           ]),
+          ...imageObjectsJsonLd(images, product.title, path),
         ]}
       />
       <ProductViewBeacon productId={product.id} />
@@ -119,20 +131,16 @@ async function MarketDetail({ params }: Props) {
           <span>{product.title}</span>
         </p>
 
-        {(() => {
-          const images = mergeGallery(product.image_url, product.gallery);
-          if (images.length) {
-            return <ItemGallery images={images} alt={product.title} />;
-          }
-          return (
-            <div className={`detail__media detail__media--${product.kind}`}>
-              <div className="detail__art">
-                <span>{product.badge ?? product.kind}</span>
-                <strong>{product.title}</strong>
-              </div>
+        {images.length ? (
+          <ItemGallery images={images} alt={product.title} />
+        ) : (
+          <div className={`detail__media detail__media--${product.kind}`}>
+            <div className="detail__art">
+              <span>{product.badge ?? product.kind}</span>
+              <strong>{product.title}</strong>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         <div className="detail__info">
           <div className="detail__tags">
@@ -189,6 +197,11 @@ async function MarketDetail({ params }: Props) {
             <Link className="btn btn-outline" href="/market">
               Kembali
             </Link>
+            <ShareBar
+              title={product.title}
+              path={path}
+              text={`Cek produk ${product.title} di Market Mas'ud El-Tamamy`}
+            />
           </div>
         </div>
 

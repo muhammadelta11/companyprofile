@@ -3,16 +3,21 @@ import { Suspense } from "react";
 import { AppPage, AppPageHero } from "@/components/AppPage";
 import { AppPageFallback } from "@/components/AppPageFallback";
 import { MarketCatalog } from "@/components/market/MarketCatalog";
+import { ShareBar } from "@/components/ShareBar";
 import { getProducts } from "@/lib/content";
 import { pageMetadata } from "@/lib/seo";
 import { getHeroImage } from "@/lib/site-settings";
 
-export const metadata = pageMetadata({
-  title: "Market",
-  description:
-    "Katalog produk fisik & digital Mas'ud El-Tamamy dan mitra. Urut unggulan, terbaru, atau terpopuler — order via WhatsApp tanpa wajib login.",
-  path: "/market",
-});
+export async function generateMetadata() {
+  const hero = await getHeroImage("market");
+  return pageMetadata({
+    title: "Market",
+    description:
+      "Katalog produk fisik & digital Mas'ud El-Tamamy dan mitra. Urut unggulan, terbaru, atau terpopuler — order via WhatsApp tanpa wajib login.",
+    path: "/market",
+    image: hero,
+  });
+}
 
 export default function MarketPage() {
   return (
@@ -51,6 +56,13 @@ async function MarketContent() {
       </AppPageHero>
 
       <div className="apage-body">
+        <div className="apage-share">
+          <ShareBar
+            title="Market Mas'ud El-Tamamy"
+            path="/market"
+            text="Belanja produk official & mitra di Market Mas'ud El-Tamamy"
+          />
+        </div>
         <MarketCatalog products={products} />
 
         <div className="apage-cta">

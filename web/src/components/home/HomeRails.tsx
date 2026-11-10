@@ -80,7 +80,7 @@ export function HomeRails({ products, trips, projects }: Props) {
       {projects.length ? (
         <Rail title="Karya pilihan" href="/proyek" more="Semua">
           {projects.map((p) => (
-            <Link key={p.id} className="mhome-card mhome-card--work" href="/proyek">
+            <Link key={p.id} className="mhome-card mhome-card--work" href={`/proyek/${p.id}`}>
               <span className="mhome-card__media mhome-card__media--work">
                 {p.cover_url ? (
                   <Image src={p.cover_url} alt={p.title} width={280} height={180} sizes="140px" />

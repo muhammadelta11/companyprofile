@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Reveal } from "@/components/Reveal";
 import { safeNextPath } from "@/lib/access-policy";
 import { pageMetadata } from "@/lib/seo";
@@ -13,7 +14,23 @@ export const metadata = pageMetadata({
   noIndex: true,
 });
 
-export default async function MasukPage({ searchParams }: Props) {
+export default function MasukPage({ searchParams }: Props) {
+  return (
+    <Suspense
+      fallback={
+        <div className="container page-hero auth-page">
+          <p className="eyebrow">Akun</p>
+          <h1>Masuk ke akun</h1>
+          <p>Memuat formulir…</p>
+        </div>
+      }
+    >
+      <MasukContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function MasukContent({ searchParams }: Props) {
   const sp = await searchParams;
   const next = safeNextPath(sp.next);
 

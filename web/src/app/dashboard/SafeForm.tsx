@@ -5,6 +5,13 @@ import type { ActionResult } from "./actions";
 
 export type FormDraft = Record<string, string>;
 
+type FormState = {
+  ok: boolean;
+  error?: string;
+  draft?: FormDraft;
+  gen?: number;
+};
+
 function snapshotDraft(fd: FormData): FormDraft {
   const draft: FormDraft = {};
   fd.forEach((value, key) => {
@@ -73,7 +80,7 @@ export function SafeForm({
   }, [storageKey, persistKey]);
 
   const [state, formAction] = useActionState(
-    async (_prev: ActionResult & { draft?: FormDraft; ok?: boolean; gen?: number }, fd: FormData) => {
+    async (_prev: FormState, fd: FormData): Promise<FormState> => {
       const draft = snapshotDraft(fd);
 
       if (storageKey) {
@@ -93,7 +100,7 @@ export function SafeForm({
             /* ignore */
           }
         }
-        return { ...result, draft, ok: false };
+        return { ok: false, error: result.error, draft };
       }
       // Tutup panel edit + toast sebelum/saat remount refresh
       const details = formRef.current?.closest("details");
@@ -107,7 +114,7 @@ export function SafeForm({
       successGen.current += 1;
       return { ok: true, gen: successGen.current };
     },
-    {} as ActionResult & { draft?: FormDraft; ok?: boolean; gen?: number }
+    { ok: false } satisfies FormState
   );
 
   useEffect(() => {

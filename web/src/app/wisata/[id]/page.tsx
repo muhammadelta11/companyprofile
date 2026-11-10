@@ -3,12 +3,20 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppPage } from "@/components/AppPage";
 import { ItemGallery } from "@/components/ItemGallery";
+import { JsonLd } from "@/components/JsonLd";
+import { ShareBar } from "@/components/ShareBar";
 import { mergeGallery } from "@/lib/gallery";
 import { RichHtml } from "@/components/RichHtml";
 import { tripExtra } from "@/data/catalog-extra";
 import { waLink } from "@/data/site";
 import { getTrip, getTrips } from "@/lib/content";
-import { pageMetadata } from "@/lib/seo";
+import {
+  absoluteUrl,
+  breadcrumbJsonLd,
+  imageObjectsJsonLd,
+  pageMetadata,
+  plainText,
+} from "@/lib/seo";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -16,6 +24,7 @@ export async function generateMetadata({ params }: Props) {
   const { id } = await params;
   const trip = await getTrip(id);
   if (!trip) return { title: "Paket wisata" };
+  const gallery = mergeGallery(trip.image_url, trip.gallery);
   return pageMetadata({
     title: trip.title,
     description:
@@ -23,6 +32,7 @@ export async function generateMetadata({ params }: Props) {
       `Paket wisata ${trip.title} bersama Mas'ud El-Tamamy. Konsultasi & booking via WhatsApp.`,
     path: `/wisata/${trip.id}`,
     image: trip.image_url,
+    images: gallery,
   });
 }
 
@@ -63,9 +73,40 @@ async function WisataDetail({ params }: Props) {
     ["Konsultasi paket", "Penyesuaian jadwal", "Konfirmasi via WhatsApp", "Pendampingan rombongan"];
 
   const others = (await getTrips()).filter((t) => t.id !== trip.id).slice(0, 3);
+  const images = mergeGallery(trip.image_url, trip.gallery);
+  const path = `/wisata/${trip.id}`;
 
   return (
     <AppPage>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "TouristTrip",
+            name: trip.title,
+            description: plainText(trip.summary, 300) || trip.title,
+            url: absoluteUrl(path),
+            ...(images.length ? { image: images } : {}),
+            ...(trip.duration ? { itinerary: trip.duration } : {}),
+            ...(trip.price_label
+              ? {
+                  offers: {
+                    "@type": "Offer",
+                    description: trip.price_label,
+                    priceCurrency: "IDR",
+                    url: absoluteUrl(path),
+                  },
+                }
+              : {}),
+          },
+          breadcrumbJsonLd([
+            { name: "Beranda", path: "/" },
+            { name: "Wisata", path: "/wisata" },
+            { name: trip.title, path },
+          ]),
+          ...imageObjectsJsonLd(images, trip.title, path),
+        ]}
+      />
       <div className="apage-body detail">
         <p className="detail__crumb">
           <Link href="/wisata">Wisata</Link>
@@ -73,20 +114,16 @@ async function WisataDetail({ params }: Props) {
           <span>{trip.title}</span>
         </p>
 
-        {(() => {
-          const images = mergeGallery(trip.image_url, trip.gallery);
-          if (images.length) {
-            return <ItemGallery images={images} alt={trip.title} />;
-          }
-          return (
-            <div className={`detail__media detail__media--trip tr-card--${extra?.tone ?? "sky"}`}>
-              <div className="detail__art">
-                <span>{trip.tag ?? "Trip"}</span>
-                <strong>{trip.title}</strong>
-              </div>
+        {images.length ? (
+          <ItemGallery images={images} alt={trip.title} />
+        ) : (
+          <div className={`detail__media detail__media--trip tr-card--${extra?.tone ?? "sky"}`}>
+            <div className="detail__art">
+              <span>{trip.tag ?? "Trip"}</span>
+              <strong>{trip.title}</strong>
             </div>
-          );
-        })()}
+          </div>
+        )}
 
         <div className="detail__info">
           <div className="detail__tags">
@@ -119,6 +156,11 @@ async function WisataDetail({ params }: Props) {
             <Link className="btn btn-outline" href="/wisata">
               Semua paket
             </Link>
+            <ShareBar
+              title={trip.title}
+              path={path}
+              text={`Cek paket wisata ${trip.title} dari Mas'ud El-Tamamy`}
+            />
           </div>
         </div>
 

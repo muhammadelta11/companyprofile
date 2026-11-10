@@ -3,17 +3,22 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { AppPage, AppPageHero } from "@/components/AppPage";
 import { AppPageFallback } from "@/components/AppPageFallback";
+import { ShareBar } from "@/components/ShareBar";
 import { tripExtra } from "@/data/catalog-extra";
 import { getTrips } from "@/lib/content";
 import { getHeroImage } from "@/lib/site-settings";
-
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata = pageMetadata({
-  title: "Wisata",
-  description: "Katalog paket wisata Mbarep Tour — studi tour, gathering, ziarah, dan custom rute.",
-  path: "/wisata",
-});
+export async function generateMetadata() {
+  const hero = await getHeroImage("wisata");
+  return pageMetadata({
+    title: "Wisata",
+    description:
+      "Katalog paket wisata Mbarep Tour — studi tour, gathering, ziarah, dan custom rute.",
+    path: "/wisata",
+    image: hero,
+  });
+}
 
 export default function WisataPage() {
   return (
@@ -37,6 +42,13 @@ async function WisataContent() {
       />
 
       <div className="apage-body">
+        <div className="apage-share">
+          <ShareBar
+            title="Paket Wisata Mbarep Tour"
+            path="/wisata"
+            text="Cek paket wisata Mbarep Tour bersama Mas'ud El-Tamamy"
+          />
+        </div>
         <div className="tr-grid">
           {trips.map((t) => {
             const extra = tripExtra(t.id, t.title);
@@ -48,7 +60,13 @@ async function WisataContent() {
               >
                 <span className="tr-card__media">
                   {t.image_url ? (
-                    <Image src={t.image_url} alt="" width={400} height={280} sizes="160px" />
+                    <Image
+                      src={t.image_url}
+                      alt={t.title}
+                      width={400}
+                      height={280}
+                      sizes="160px"
+                    />
                   ) : (
                     <span className="tr-card__art" aria-hidden="true">
                       <em>{t.tag ?? "Trip"}</em>

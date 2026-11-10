@@ -2,15 +2,20 @@ import { Suspense } from "react";
 import { AppPage, AppPageHero } from "@/components/AppPage";
 import { AppPageFallback } from "@/components/AppPageFallback";
 import { JoinForm } from "@/components/JoinForm";
+import { ShareBar } from "@/components/ShareBar";
 import { getHeroImage } from "@/lib/site-settings";
-
 import { pageMetadata } from "@/lib/seo";
 
-export const metadata = pageMetadata({
-  title: "Gabung",
-  description: "Gabung jadi member, mitra penjual, atau partner kolaborasi Mas'ud El-Tamamy.",
-  path: "/gabung",
-});
+export async function generateMetadata() {
+  const hero = await getHeroImage("gabung");
+  return pageMetadata({
+    title: "Gabung",
+    description:
+      "Gabung jadi member, mitra penjual, atau partner kolaborasi Mas'ud El-Tamamy.",
+    path: "/gabung",
+    image: hero,
+  });
+}
 
 const BENEFITS = [
   {
@@ -77,6 +82,13 @@ async function GabungContent() {
       />
 
       <div className="apage-body">
+        <div className="apage-share">
+          <ShareBar
+            title="Gabung Mas'ud El-Tamamy"
+            path="/gabung"
+            text="Gabung jadi member, mitra, atau partner Mas'ud El-Tamamy"
+          />
+        </div>
         <div className="gb-roles">
           {BENEFITS.map((b) => (
             <article key={b.id} className={`gb-role gb-role--${b.tone}`}>

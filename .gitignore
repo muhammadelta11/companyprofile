@@ -1,0 +1,14 @@
+.vercel
+
+# Secrets & credentials — jangan pernah di-commit
+client_secret*.json
+**/client_secret*.json
+*.apps.googleusercontent.com.json
+.env
+.env.*
+!.env.example
+
+# File lokal / pribadi (bukan bagian situs)
+aku2.jpg
+WhatsApp Image*.jpeg
+WhatsApp Image*.jpg

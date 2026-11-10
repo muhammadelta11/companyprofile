@@ -3,6 +3,9 @@ import { SITE } from "@/data/site";
 
 export const SITE_URL = "https://masudeltamamy.com";
 
+/** Gambar default untuk share / Open Graph (banner utama situs). */
+export const DEFAULT_OG_IMAGE = "/og-default.jpg";
+
 /** Buang HTML → teks meta/deskripsi. */
 export function plainText(html: string | null | undefined, max = 160) {
   if (!html) return "";
@@ -22,7 +25,14 @@ export function plainText(html: string | null | undefined, max = 160) {
 
 export function absoluteUrl(path = "/") {
   if (!path || path === "/") return SITE_URL;
+  if (/^https?:\/\//i.test(path)) return path;
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/** URL absolut untuk meta gambar (relatif / absolut / kosong → default). */
+export function absoluteImageUrl(src?: string | null, fallback = DEFAULT_OG_IMAGE) {
+  const pick = (src && src.trim()) || fallback;
+  return absoluteUrl(pick);
 }
 
 type PageMetaInput = {
@@ -30,16 +40,31 @@ type PageMetaInput = {
   description?: string | null;
   path: string;
   image?: string | null;
+  images?: (string | null | undefined)[];
   type?: "website" | "article";
   noIndex?: boolean;
 };
 
-/** Metadata konsisten + Open Graph + Twitter + canonical. */
+function uniqueImages(primary?: string | null, extras?: (string | null | undefined)[]) {
+  const out: string[] = [];
+  const push = (v?: string | null) => {
+    if (!v?.trim()) return;
+    const abs = absoluteUrl(v.trim());
+    if (!out.includes(abs)) out.push(abs);
+  };
+  push(primary);
+  for (const e of extras ?? []) push(e);
+  if (!out.length) out.push(absoluteUrl(DEFAULT_OG_IMAGE));
+  return out;
+}
+
+/** Metadata konsisten + Open Graph + Twitter + canonical + SEO gambar. */
 export function pageMetadata({
   title,
   description,
   path,
   image,
+  images,
   type = "website",
   noIndex = false,
 }: PageMetaInput): Metadata {
@@ -47,7 +72,14 @@ export function pageMetadata({
     plainText(description, 160) ||
     `Platform bisnis ${SITE.brand}: jasa digital, market produk, dan paket wisata.`;
   const url = absoluteUrl(path);
-  const ogImage = image || undefined;
+  const ogList = uniqueImages(image, images);
+  const ogImages = ogList.map((urlAbs, i) => ({
+    url: urlAbs,
+    width: 1200,
+    height: 630,
+    alt: i === 0 ? title : `${title} — foto ${i + 1}`,
+    type: "image/jpeg" as const,
+  }));
 
   return {
     title,
@@ -55,7 +87,17 @@ export function pageMetadata({
     alternates: { canonical: url },
     robots: noIndex
       ? { index: false, follow: false }
-      : { index: true, follow: true },
+      : {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            "max-image-preview": "large",
+            "max-snippet": -1,
+            "max-video-preview": -1,
+          },
+        },
     openGraph: {
       title,
       description: desc,
@@ -63,13 +105,13 @@ export function pageMetadata({
       siteName: SITE.brand,
       locale: "id_ID",
       type,
-      ...(ogImage ? { images: [{ url: ogImage }] } : {}),
+      images: ogImages,
     },
     twitter: {
-      card: ogImage ? "summary_large_image" : "summary",
+      card: "summary_large_image",
       title,
       description: desc,
-      ...(ogImage ? { images: [ogImage] } : {}),
+      images: ogList,
     },
   };
 }
@@ -88,6 +130,8 @@ export function organizationJsonLd() {
     url: SITE_URL,
     email: SITE.email,
     telephone: `+${SITE.wa}`,
+    logo: absoluteImageUrl("/icons/icon-512.png"),
+    image: absoluteImageUrl(DEFAULT_OG_IMAGE),
     address: {
       "@type": "PostalAddress",
       addressLocality: "Ngawi",
@@ -105,6 +149,7 @@ export function websiteJsonLd() {
     name: SITE.brand,
     url: SITE_URL,
     inLanguage: "id-ID",
+    image: absoluteImageUrl(DEFAULT_OG_IMAGE),
     potentialAction: {
       "@type": "SearchAction",
       target: `${SITE_URL}/market`,
@@ -126,16 +171,44 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
   };
 }
 
+/** Schema gambar untuk galeri / cover (SEO gambar Google). */
+export function imageObjectsJsonLd(
+  images: (string | null | undefined)[],
+  alt: string,
+  pagePath: string
+) {
+  const list: string[] = [];
+  for (const src of images) {
+    if (!src?.trim()) continue;
+    const abs = absoluteUrl(src.trim());
+    if (!list.includes(abs)) list.push(abs);
+  }
+  if (!list.length) list.push(absoluteUrl(DEFAULT_OG_IMAGE));
+
+  return list.map((url, i) => ({
+    "@context": "https://schema.org",
+    "@type": "ImageObject",
+    contentUrl: url,
+    url,
+    name: i === 0 ? alt : `${alt} — ${i + 1}`,
+    caption: alt,
+    representativeOfPage: i === 0,
+    isPartOf: absoluteUrl(pagePath),
+  }));
+}
+
 export function productJsonLd(input: {
   id: string;
   title: string;
   description?: string | null;
   image?: string | null;
+  images?: (string | null | undefined)[];
   priceLabel?: string | null;
   kind: string;
   sellerName: string;
 }) {
   const desc = plainText(input.description, 300);
+  const imgs = uniqueImages(input.image, input.images);
   const offers: Record<string, unknown> = {
     "@type": "Offer",
     url: absoluteUrl(`/market/${input.id}`),
@@ -146,11 +219,12 @@ export function productJsonLd(input: {
     },
   };
   // Harga teks bebas ("Mulai Rp 1,5jt") — jangan paksa angka palsu.
-  if (input.priceLabel) offers.priceSpecification = {
-    "@type": "PriceSpecification",
-    description: input.priceLabel,
-    priceCurrency: "IDR",
-  };
+  if (input.priceLabel)
+    offers.priceSpecification = {
+      "@type": "PriceSpecification",
+      description: input.priceLabel,
+      priceCurrency: "IDR",
+    };
 
   return {
     "@context": "https://schema.org",
@@ -158,7 +232,7 @@ export function productJsonLd(input: {
     name: input.title,
     description: desc || input.title,
     category: input.kind === "digital" ? "Digital goods" : "Physical goods",
-    ...(input.image ? { image: [input.image] } : {}),
+    image: imgs,
     brand: { "@type": "Brand", name: SITE.brand },
     offers,
   };

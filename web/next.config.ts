@@ -5,13 +5,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   allowedDevOrigins: ["127.0.0.1", "localhost"],
-  // Galeri multi-foto: unggah idealnya lewat /api/upload/image.
-  // Limit ini cadangan jika ada file masih ikut FormData server action.
-  serverActions: {
-    bodySizeLimit: "40mb",
-  },
   experimental: {
     optimizePackageImports: ["framer-motion"],
+    // Cadangan jika ada file ikut FormData server action (upload utama lewat /api/upload/image).
+    serverActions: {
+      bodySizeLimit: "40mb",
+    },
   },
   serverExternalPackages: ["sharp"],
   async headers() {

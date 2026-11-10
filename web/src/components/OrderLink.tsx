@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState, useTransition } from "react";
+import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { placeOrder } from "@/app/actions";
 import { TurnstileField } from "@/components/TurnstileField";
 import { shippingLabel, type ShippingMode } from "@/lib/product";
@@ -33,12 +33,13 @@ export function OrderLink({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const [startedAt] = useState(() => Date.now());
+  const startedAt = useRef(0);
   const [tsKey, setTsKey] = useState(0);
   const ship = shippingLabel(shippingMode, serviceArea, kind);
 
   useEffect(() => {
     if (!open) return;
+    startedAt.current = Date.now();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
@@ -58,7 +59,7 @@ export function OrderLink({
         city: String(fd.get("city") ?? ""),
         note: String(fd.get("note") ?? ""),
         website: String(fd.get("website") ?? ""),
-        startedAt,
+        startedAt: startedAt.current,
         turnstileToken: String(fd.get("cf-turnstile-response") ?? ""),
       });
       if (result.error) {

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getProducts, getTrips } from "@/lib/content";
+import { getProducts, getProjects, getTrips } from "@/lib/content";
 import { absoluteUrl } from "@/lib/seo";
 
 const STATIC: { path: string; changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"]; priority: number }[] = [
@@ -24,8 +24,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let products: Awaited<ReturnType<typeof getProducts>> = [];
   let trips: Awaited<ReturnType<typeof getTrips>> = [];
+  let projects: Awaited<ReturnType<typeof getProjects>> = [];
   try {
-    [products, trips] = await Promise.all([getProducts(), getTrips()]);
+    [products, trips, projects] = await Promise.all([
+      getProducts(),
+      getTrips(),
+      getProjects(),
+    ]);
   } catch {
     // Sitemap tetap valid meski DB gagal.
   }
@@ -56,5 +61,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.75,
   }));
 
-  return [...staticEntries, ...productEntries, ...sellerEntries, ...tripEntries];
+  const projectEntries: MetadataRoute.Sitemap = projects.map((p) => ({
+    url: absoluteUrl(`/proyek/${p.id}`),
+    lastModified: now,
+    changeFrequency: "monthly",
+    priority: 0.65,
+  }));
+
+  return [
+    ...staticEntries,
+    ...productEntries,
+    ...sellerEntries,
+    ...tripEntries,
+    ...projectEntries,
+  ];
 }

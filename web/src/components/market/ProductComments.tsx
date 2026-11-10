@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { postProductComment } from "@/app/actions";
 import { TurnstileField } from "@/components/TurnstileField";
 import { loginHref } from "@/lib/access-policy";
@@ -33,9 +33,13 @@ export function ProductComments({ productId, comments, canComment, userName }: P
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
-  const [startedAt] = useState(() => Date.now());
+  const startedAt = useRef(0);
   const [tsKey, setTsKey] = useState(0);
   const next = `/market/${productId}`;
+
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -47,7 +51,7 @@ export function ProductComments({ productId, comments, canComment, userName }: P
         productId,
         body,
         website: String(fd.get("website") ?? ""),
-        startedAt,
+        startedAt: startedAt.current,
         turnstileToken: String(fd.get("cf-turnstile-response") ?? ""),
       });
       if (res.error) {

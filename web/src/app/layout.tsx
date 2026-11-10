@@ -4,7 +4,13 @@ import { AppShell } from "@/components/AppShell";
 import { JsonLd } from "@/components/JsonLd";
 import { INTRO_HEAD_SCRIPT } from "@/components/intro/intro-config";
 import { PWA_HEAD_SCRIPT } from "@/components/pwa/pwa-config";
-import { organizationJsonLd, SITE_URL, websiteJsonLd } from "@/lib/seo";
+import {
+  absoluteUrl,
+  DEFAULT_OG_IMAGE,
+  organizationJsonLd,
+  SITE_URL,
+  websiteJsonLd,
+} from "@/lib/seo";
 import "./globals.css";
 
 /** Satu family untuk body + judul — proporsi normal seperti app Android (bukan display “gepeng”). */
@@ -13,6 +19,13 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
 });
+
+const DEFAULT_OG = {
+  url: absoluteUrl(DEFAULT_OG_IMAGE),
+  width: 1200,
+  height: 630,
+  alt: "Banner utama Mas'ud El-Tamamy — Digital, Market, dan Paket Wisata",
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -44,16 +57,24 @@ export const metadata: Metadata = {
     siteName: "Mas'ud El-Tamamy",
     locale: "id_ID",
     type: "website",
+    images: [DEFAULT_OG],
   },
   twitter: {
     card: "summary_large_image",
     title: "Mas'ud El-Tamamy — Digital · Market · Wisata",
     description: "Jasa digital, market produk, dan paket wisata via WhatsApp.",
+    images: [DEFAULT_OG.url],
   },
   robots: {
     index: true,
     follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
   },
 };
 

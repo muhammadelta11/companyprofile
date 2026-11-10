@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppPage, AppPageHero } from "@/components/AppPage";
 import { FeedbackForm } from "@/components/FeedbackForm";
 import { pageMetadata } from "@/lib/seo";
@@ -18,7 +19,9 @@ export default function MasukanPage() {
         lead="Bukan untuk order produk. Order tetap lewat Market → WhatsApp penjual."
       />
       <div className="apage-body">
-        <FeedbackForm page="/masukan" />
+        <Suspense fallback={<p className="mk__empty">Memuat formulir…</p>}>
+          <FeedbackForm page="/masukan" />
+        </Suspense>
       </div>
     </AppPage>
   );

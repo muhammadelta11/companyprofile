@@ -1,14 +1,18 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { submitFeedback } from "@/app/actions";
 import { TurnstileField } from "@/components/TurnstileField";
 
 export function FeedbackForm({ page }: { page?: string }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<{ ok?: boolean; text: string } | null>(null);
-  const [startedAt] = useState(() => Date.now());
+  const startedAt = useRef(0);
   const [tsKey, setTsKey] = useState(0);
+
+  useEffect(() => {
+    startedAt.current = Date.now();
+  }, []);
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,7 +27,7 @@ export function FeedbackForm({ page }: { page?: string }) {
         message: String(fd.get("message") ?? ""),
         page: page || String(fd.get("page") ?? ""),
         website: String(fd.get("website") ?? ""),
-        startedAt,
+        startedAt: startedAt.current,
         turnstileToken: String(fd.get("cf-turnstile-response") ?? ""),
       });
       if (result.error) {
