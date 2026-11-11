@@ -72,18 +72,34 @@ function isNavActive(href: string, path: string, searchParams: URLSearchParams) 
   return true;
 }
 
-export function DashNav({ name, role }: { name: string; role: Role }) {
+export function DashNav({
+  name,
+  role,
+  city,
+  storeHref,
+}: {
+  name: string;
+  role: Role;
+  city?: string | null;
+  storeHref?: string | null;
+}) {
   const path = usePathname();
   const searchParams = useSearchParams();
   const flat = GROUPS.flatMap((g) => g.items.filter((i) => i.roles.includes(role)));
+  const subtitle = [ROLE_LABEL[role], city?.trim() || null].filter(Boolean).join(" · ");
 
   return (
-    <aside className="dash-side">
+    <aside className={`dash-side${role === "mitra" ? " dash-side--mitra" : ""}`}>
       <div className="dash-user">
         <span className="dash-avatar">{name.slice(0, 1).toUpperCase()}</span>
         <div>
           <strong>{name}</strong>
-          <small>{ROLE_LABEL[role]}</small>
+          <small>{subtitle}</small>
+          {storeHref ? (
+            <Link href={storeHref} className="dash-user__store">
+              Etalase publik
+            </Link>
+          ) : null}
         </div>
         {role === "admin" ? <AdminNotify /> : null}
         <form action={signOut} className="dash-side__logout">

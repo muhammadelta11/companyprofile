@@ -20,5 +20,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 async function DashSide() {
   const user = await requireUser();
-  return <DashNav name={user.name} role={user.role} />;
+  const displayName =
+    (user.role === "mitra" || user.role === "admin") && user.shop_name.trim()
+      ? user.shop_name.trim()
+      : user.name;
+  return (
+    <DashNav
+      name={displayName}
+      role={user.role}
+      city={user.city || null}
+      storeHref={user.role === "mitra" ? `/market/penjual/${user.id}` : null}
+    />
+  );
 }

@@ -87,34 +87,203 @@ async function AdminOverview() {
 async function MitraOverview({ user }: { user: CurrentUser }) {
   const supabase = await createClient();
   const count = { count: "exact" as const, head: true };
-  const [live, pending, orders] = await Promise.all([
+  const shopName = user.shop_name.trim() || user.name;
+  const storeHref = `/market/penjual/${user.id}`;
+
+  const [live, pending, orders, chats, recentProducts, recentOrders] = await Promise.all([
     supabase.from("products").select("id", count).eq("owner_id", user.id).eq("status", "approved"),
     supabase.from("products").select("id", count).eq("owner_id", user.id).eq("status", "pending"),
     supabase.from("orders").select("id", count).eq("seller_id", user.id).eq("status", "new"),
+    supabase.from("product_threads").select("id", count).eq("seller_id", user.id),
+    supabase
+      .from("products")
+      .select("id, title, status, price_label, image_url, created_at")
+      .eq("owner_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(4),
+    supabase
+      .from("orders")
+      .select("id, product_title, status, created_at, buyer_name")
+      .eq("seller_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(4),
   ]);
 
+  const chatCount = chats.error ? 0 : (chats.count ?? 0);
+  const productsList = recentProducts.error ? [] : (recentProducts.data ?? []);
+  const ordersList = recentOrders.error ? [] : (recentOrders.data ?? []);
+
+  const checklist = [
+    {
+      ok: Boolean(user.phone?.trim()),
+      label: "Nomor WhatsApp terisi",
+      href: "/dashboard/profil",
+    },
+    {
+      ok: Boolean(user.shop_name?.trim()),
+      label: "Nama etalase / brand",
+      href: "/dashboard/profil",
+    },
+    {
+      ok: Boolean(user.tagline?.trim() || user.bio?.trim()),
+      label: "Tagline atau tentang toko",
+      href: "/dashboard/profil",
+    },
+    {
+      ok: Boolean(
+        user.credentials.legal_name ||
+          user.credentials.business_reg_no ||
+          user.credentials.tax_status ||
+          user.credentials.brand_certs.length
+      ),
+      label: "Legalitas / sertifikat (opsional)",
+      href: "/dashboard/profil",
+    },
+    {
+      ok: (live.count ?? 0) > 0,
+      label: "Minimal 1 produk tayang",
+      href: "/dashboard/produk",
+    },
+  ];
+  const todo = checklist.filter((c) => !c.ok);
+  const readyScore = Math.round(
+    (checklist.filter((c) => c.ok).length / checklist.length) * 100
+  );
+
   return (
-    <>
-      <DashHead title={`Halo, ${user.name}`} text="Kelola produk dan pesanan tokomu." />
+    <div className="mitra-home">
+      <header className="mitra-home__hero">
+        <div className="mitra-home__hero-copy">
+          <p className="mitra-home__eyebrow">Konsol penjual</p>
+          <h1>{shopName}</h1>
+          <p className="mitra-home__lead">
+            {user.tagline?.trim() ||
+              "Kelola etalase, pesanan, dan chat pembeli dari satu tempat."}
+          </p>
+          <div className="mitra-home__meta">
+            <Badge value={user.status} />
+            {user.city ? <span>{user.city}</span> : null}
+            <span>Kesiapan etalase {readyScore}%</span>
+          </div>
+          <div className="mitra-home__hero-actions">
+            <Link className="btn btn-teal btn-sm" href={storeHref}>
+              Lihat etalase publik
+            </Link>
+            <Link className="btn btn-outline btn-sm" href="/dashboard/produk">
+              Kelola produk
+            </Link>
+            <Link className="btn btn-outline btn-sm" href="/dashboard/profil">
+              Edit branding
+            </Link>
+          </div>
+        </div>
+        <div className="mitra-home__mark" aria-hidden="true">
+          {shopName.slice(0, 1).toUpperCase()}
+        </div>
+      </header>
+
       {user.status === "pending" ? (
         <p className="dash-notice">
-          Akun mitra kamu sedang diverifikasi admin. Setelah aktif, kamu bisa
-          upload produk.
+          Akun mitra sedang diverifikasi admin. Setelah aktif, kamu bisa upload produk.
         </p>
       ) : null}
-      {user.status === "active" && !user.phone ? (
-        <p className="dash-notice">
-          Isi nomor WhatsApp di{" "}
-          <Link href="/dashboard/profil">Profil</Link> agar order masuk ke WA kamu
-          (bukan ke admin).
-        </p>
-      ) : null}
-      <div className="dash-stats">
+
+      {todo.length ? (
+        <section className="mitra-home__checklist" aria-labelledby="mitra-todo">
+          <div className="mitra-home__section-head mitra-home__section-head--stack">
+            <h2 id="mitra-todo">Lengkapi toko</h2>
+            <p>Semakin lengkap, etalase makin dipercaya pembeli.</p>
+          </div>
+          <ul>
+            {todo.map((item) => (
+              <li key={item.label}>
+                <span>{item.label}</span>
+                <Link href={item.href}>Lengkapi</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <p className="mitra-home__ready">Etalase siap. Pantau pesanan dan chat secara berkala.</p>
+      )}
+
+      <div className="dash-stats mitra-home__stats">
         <Stat href="/dashboard/produk" value={live.count ?? 0} label="Produk tayang" />
         <Stat href="/dashboard/produk" value={pending.count ?? 0} label="Menunggu verifikasi" />
         <Stat href="/dashboard/pesanan" value={orders.count ?? 0} label="Pesanan baru" />
+        <Stat href="/dashboard/chat" value={chatCount} label="Percakapan chat" />
       </div>
-    </>
+
+      <section className="mitra-home__shortcuts" aria-label="Aksi cepat">
+        <Link href="/dashboard/produk" className="mitra-home__shortcut">
+          <strong>Tambah / kelola produk</strong>
+          <span>Upload, edit, pantau status verifikasi</span>
+        </Link>
+        <Link href="/dashboard/pesanan" className="mitra-home__shortcut">
+          <strong>Pesanan masuk</strong>
+          <span>Proses order dari Market</span>
+        </Link>
+        <Link href="/dashboard/chat" className="mitra-home__shortcut">
+          <strong>Chat pembeli</strong>
+          <span>Balas pertanyaan real-time</span>
+        </Link>
+        <Link href="/dashboard/profil" className="mitra-home__shortcut">
+          <strong>Profil & legalitas</strong>
+          <span>Brand, NIB, pajak, sertifikat</span>
+        </Link>
+      </section>
+
+      <div className="mitra-home__panels">
+        <section className="mitra-home__panel">
+          <div className="mitra-home__section-head">
+            <h2>Produk terbaru</h2>
+            <Link href="/dashboard/produk">Semua</Link>
+          </div>
+          {productsList.length ? (
+            <ul className="mitra-home__list">
+              {productsList.map((p) => (
+                <li key={p.id}>
+                  <div>
+                    <strong>{p.title}</strong>
+                    <small>{p.price_label || "Hubungi WA"}</small>
+                  </div>
+                  <Badge value={p.status} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Empty>
+              Belum ada produk.{" "}
+              <Link href="/dashboard/produk">Tambah produk pertama</Link>
+            </Empty>
+          )}
+        </section>
+
+        <section className="mitra-home__panel">
+          <div className="mitra-home__section-head">
+            <h2>Pesanan terbaru</h2>
+            <Link href="/dashboard/pesanan">Semua</Link>
+          </div>
+          {ordersList.length ? (
+            <ul className="mitra-home__list">
+              {ordersList.map((o) => (
+                <li key={o.id}>
+                  <div>
+                    <strong>{o.product_title ?? "Produk"}</strong>
+                    <small>
+                      {[o.buyer_name, formatDate(o.created_at)].filter(Boolean).join(" · ")}
+                    </small>
+                  </div>
+                  <Badge value={o.status} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <Empty>Belum ada pesanan masuk.</Empty>
+          )}
+        </section>
+      </div>
+    </div>
   );
 }
 

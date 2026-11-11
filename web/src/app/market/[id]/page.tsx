@@ -181,87 +181,90 @@ async function MarketDetail({ params, searchParams }: Props) {
           <span>{product.title}</span>
         </p>
 
-        {images.length ? (
-          <ItemGallery images={images} alt={product.title} />
-        ) : (
-          <div className={`detail__media detail__media--${product.kind}`}>
-            <div className="detail__art">
-              <span>{product.badge ?? product.kind}</span>
-              <strong>{product.title}</strong>
+        <div className="detail__stage">
+          {images.length ? (
+            <ItemGallery images={images} alt={product.title} />
+          ) : (
+            <div className={`detail__media detail__media--${product.kind}`}>
+              <div className="detail__art">
+                <span>{product.badge ?? product.kind}</span>
+                <strong>{product.title}</strong>
+              </div>
+            </div>
+          )}
+
+          <div className="detail__info">
+            <div className="detail__tags">
+              {product.badge ? <span>{product.badge}</span> : null}
+              <span>{product.kind}</span>
+              <span>{product.owner_id ? "Mitra" : "Official"}</span>
+            </div>
+            <h1>{product.title}</h1>
+            <p className="detail__price">{product.price_label ?? "Hubungi WA"}</p>
+            <p className="detail__ship">{ship}</p>
+            {hasMapArea(product) ? (
+              <ServiceAreaMap
+                lat={product.area_lat!}
+                lng={product.area_lng!}
+                radiusKm={product.area_radius_km && product.area_radius_km > 0 ? product.area_radius_km : 5}
+                label={product.service_area}
+              />
+            ) : null}
+
+            <Link href={profileHref} className="mk-seller mk-seller--link" aria-label={`Etalase ${sellerName}`}>
+              <div className="mk-seller__avatar" aria-hidden="true">
+                {initials || "M"}
+              </div>
+              <div className="mk-seller__meta">
+                <span className="mk-seller__eyebrow">
+                  {product.owner_id ? "Etalase mitra" : "Official store"}
+                </span>
+                <strong className="mk-seller__name">{sellerName}</strong>
+                <small>
+                  {[
+                    product.owner_id ? "Terverifikasi" : "Official brand",
+                    product.owner?.city,
+                    fromSeller.length ? `${fromSeller.length + 1} produk` : null,
+                    "Lihat etalase →",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </small>
+              </div>
+            </Link>
+
+            <div className="detail__actions">
+              <OrderLink
+                className="btn btn-teal"
+                productId={product.id}
+                title={product.title}
+                priceLabel={product.price_label}
+                shippingMode={product.shipping_mode}
+                serviceArea={product.service_area}
+                kind={product.kind}
+              >
+                Order via WhatsApp
+              </OrderLink>
+              <Link className="btn btn-outline" href="/market">
+                Kembali
+              </Link>
+              <ShareBar
+                title={product.title}
+                path={path}
+                text={`Cek produk ${product.title} di Market Mas'ud El-Tamamy`}
+              />
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="detail__info">
-          <div className="detail__tags">
-            {product.badge ? <span>{product.badge}</span> : null}
-            <span>{product.kind}</span>
-            <span>{product.owner_id ? "Mitra" : "Official"}</span>
-          </div>
-          <h1>{product.title}</h1>
-          <p className="detail__price">{product.price_label ?? "Hubungi WA"}</p>
-          <p className="detail__ship">{ship}</p>
-          {hasMapArea(product) ? (
-            <ServiceAreaMap
-              lat={product.area_lat!}
-              lng={product.area_lng!}
-              radiusKm={product.area_radius_km && product.area_radius_km > 0 ? product.area_radius_km : 5}
-              label={product.service_area}
-            />
-          ) : null}
-
-          <Link href={profileHref} className="mk-seller mk-seller--link" aria-label={`Etalase ${sellerName}`}>
-            <div className="mk-seller__avatar" aria-hidden="true">
-              {initials || "M"}
-            </div>
-            <div className="mk-seller__meta">
-              <span className="mk-seller__eyebrow">
-                {product.owner_id ? "Etalase mitra" : "Official store"}
-              </span>
-              <strong className="mk-seller__name">{sellerName}</strong>
-              <small>
-                {[
-                  product.owner_id ? "Terverifikasi" : "Official brand",
-                  product.owner?.city,
-                  fromSeller.length ? `${fromSeller.length + 1} produk` : null,
-                  "Lihat etalase →",
-                ]
-                  .filter(Boolean)
-                  .join(" · ")}
-              </small>
-            </div>
-          </Link>
-
+        <section className="detail__body">
           <RichHtml html={product.description} className="rich-html detail__lead" />
-
           <ul className="detail__list">
             {highlights.map((h) => (
               <li key={h}>{h}</li>
             ))}
           </ul>
-
-          <div className="detail__actions">
-            <OrderLink
-              className="btn btn-teal"
-              productId={product.id}
-              title={product.title}
-              priceLabel={product.price_label}
-              shippingMode={product.shipping_mode}
-              serviceArea={product.service_area}
-              kind={product.kind}
-            >
-              Order via WhatsApp
-            </OrderLink>
-            <Link className="btn btn-outline" href="/market">
-              Kembali
-            </Link>
-            <ShareBar
-              title={product.title}
-              path={path}
-              text={`Cek produk ${product.title} di Market Mas'ud El-Tamamy`}
-            />
-          </div>
-        </div>
+        </section>
 
         {related.length ? (
           <section className="detail__related">
