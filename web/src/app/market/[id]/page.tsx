@@ -7,6 +7,7 @@ import { ItemGallery } from "@/components/ItemGallery";
 import { JsonLd } from "@/components/JsonLd";
 import { mergeGallery } from "@/lib/gallery";
 import { OrderLink } from "@/components/OrderLink";
+import { ProductChat } from "@/components/market/ProductChat";
 import { ProductComments } from "@/components/market/ProductComments";
 import { ProductViewBeacon } from "@/components/market/ProductViewBeacon";
 import { RichHtml } from "@/components/RichHtml";
@@ -16,6 +17,14 @@ import { getCurrentUser } from "@/lib/auth";
 import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
 import { ServiceAreaMap } from "@/components/market/ServiceAreaMap";
+import {
+  getBuyerThreadForProduct,
+  getSellerThreadsForProduct,
+  getThreadMessages,
+  isProductSeller,
+  type ProductChatMessage,
+  type ProductChatThread,
+} from "@/lib/product-chat";
 import {
   hasMapArea,
   sellerHref,
@@ -30,7 +39,10 @@ import {
   productJsonLd,
 } from "@/lib/seo";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ chat?: string }>;
+};
 
 export async function generateMetadata({ params }: Props) {
   const { id } = await params;
@@ -67,16 +79,17 @@ function DetailFallback() {
   );
 }
 
-export default function MarketDetailPage({ params }: Props) {
+export default function MarketDetailPage({ params, searchParams }: Props) {
   return (
     <Suspense fallback={<DetailFallback />}>
-      <MarketDetail params={params} />
+      <MarketDetail params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function MarketDetail({ params }: Props) {
+async function MarketDetail({ params, searchParams }: Props) {
   const { id } = await params;
+  const { chat: chatParam } = await searchParams;
   const product = await getProduct(id);
   if (!product) notFound();
 
@@ -102,6 +115,30 @@ async function MarketDetail({ params }: Props) {
     getProductComments(product.id),
     getCurrentUser(),
   ]);
+
+  const canChat = Boolean(user && user.status !== "suspended");
+  const sellerView = Boolean(user && isProductSeller(user, product.owner_id));
+  let chatThread: ProductChatThread | null = null;
+  let chatMessages: ProductChatMessage[] = [];
+  let sellerThreads: ProductChatThread[] = [];
+
+  if (user && canChat) {
+    if (sellerView) {
+      sellerThreads = await getSellerThreadsForProduct(product.id);
+      const selected =
+        (chatParam && sellerThreads.find((t) => t.id === chatParam)) ||
+        sellerThreads[0] ||
+        null;
+      chatThread = selected;
+      if (selected) {
+        chatMessages = await getThreadMessages(selected.id, user.id);
+      }
+    } else {
+      const buyerChat = await getBuyerThreadForProduct(product.id, user.id);
+      chatThread = buyerChat.thread;
+      chatMessages = buyerChat.messages;
+    }
+  }
   const fromSeller = product.owner_id
     ? all.filter((p) => p.owner_id === product.owner_id && p.id !== product.id)
     : all.filter((p) => !p.owner_id && p.id !== product.id);
@@ -288,10 +325,22 @@ async function MarketDetail({ params }: Props) {
           </section>
         ) : null}
 
+        <ProductChat
+          productId={product.id}
+          productTitle={product.title}
+          canChat={canChat}
+          isSellerView={sellerView}
+          userId={user?.id}
+          userName={user?.name}
+          thread={chatThread}
+          messages={chatMessages}
+          sellerThreads={sellerThreads}
+        />
+
         <ProductComments
           productId={product.id}
           comments={comments}
-          canComment={Boolean(user && user.status !== "suspended")}
+          canComment={canChat}
           userName={user?.name}
         />
       </div>

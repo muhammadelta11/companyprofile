@@ -184,6 +184,119 @@ export async function postProductComment(input: {
   return { ok: true };
 }
 
+/** Chat privat per produk — wajib login, tersimpan di product_threads / product_messages. */
+export async function sendProductChatMessage(input: {
+  productId: string;
+  body: string;
+  threadId?: string;
+  website?: string;
+  startedAt?: number;
+}): Promise<{
+  error?: string;
+  ok?: boolean;
+  threadId?: string;
+  messageId?: string;
+  createdAt?: string;
+}> {
+  if (!supabaseReady) return { error: "Database belum terhubung." };
+  if (isHoneypot(input.website) || isTooFast(input.startedAt)) return { ok: true };
+  if (await isRateLimited("product-chat", 40)) {
+    return { error: "Terlalu cepat. Tunggu sebentar." };
+  }
+  if (!isUuid(input.productId)) return { error: "Produk tidak valid." };
+  if (input.threadId && !isUuid(input.threadId)) return { error: "Percakapan tidak valid." };
+
+  const user = await getCurrentUser();
+  if (!user) return { error: "Masuk dulu untuk chat." };
+  if (user.status === "suspended") return { error: "Akun ditangguhkan." };
+
+  const body = input.body.trim().slice(0, 2000);
+  if (body.length < 1) return { error: "Pesan kosong." };
+
+  const supabase = await createClient();
+  const { data: product } = await supabase
+    .from("products")
+    .select("id, status, owner_id, title")
+    .eq("id", input.productId)
+    .maybeSingle();
+  if (!product || product.status !== "approved") {
+    return { error: "Produk tidak ditemukan." };
+  }
+
+  const ownerId = product.owner_id ? String(product.owner_id) : null;
+  const isSeller = user.role === "admin" || (ownerId !== null && ownerId === user.id);
+
+  let threadId = input.threadId ?? null;
+
+  if (threadId) {
+    const { data: thread } = await supabase
+      .from("product_threads")
+      .select("id, product_id, buyer_id, seller_id")
+      .eq("id", threadId)
+      .maybeSingle();
+    if (!thread || String(thread.product_id) !== input.productId) {
+      return { error: "Percakapan tidak ditemukan." };
+    }
+    const allowed =
+      String(thread.buyer_id) === user.id ||
+      (thread.seller_id && String(thread.seller_id) === user.id) ||
+      user.role === "admin";
+    if (!allowed) return { error: "Tidak punya akses ke percakapan ini." };
+  } else {
+    if (isSeller && ownerId === user.id) {
+      return { error: "Pilih percakapan pembeli untuk membalas." };
+    }
+    if (isSeller && user.role === "admin" && !ownerId) {
+      return { error: "Pilih percakapan pembeli untuk membalas." };
+    }
+
+    const { data: existing } = await supabase
+      .from("product_threads")
+      .select("id")
+      .eq("product_id", input.productId)
+      .eq("buyer_id", user.id)
+      .maybeSingle();
+
+    if (existing) {
+      threadId = String(existing.id);
+    } else {
+      const { data: created, error: createErr } = await supabase
+        .from("product_threads")
+        .insert({
+          product_id: input.productId,
+          buyer_id: user.id,
+          seller_id: ownerId,
+        })
+        .select("id")
+        .single();
+      if (createErr || !created) {
+        return { error: "Gagal membuka chat. Jalankan product-chat.sql di Supabase." };
+      }
+      threadId = String(created.id);
+    }
+  }
+
+  const { data: inserted, error } = await supabase
+    .from("product_messages")
+    .insert({
+      thread_id: threadId,
+      sender_id: user.id,
+      body,
+    })
+    .select("id, created_at")
+    .single();
+  if (error) {
+    return { error: "Gagal mengirim. Jalankan product-chat.sql atau coba lagi." };
+  }
+
+  return {
+    ok: true,
+    threadId,
+    messageId: inserted?.id ? String(inserted.id) : undefined,
+    createdAt: inserted?.created_at ? String(inserted.created_at) : undefined,
+  };
+}
+
 /** Catat buka halaman detail produk (untuk urutan terpopuler di Market). */
 export async function trackProductView(productId: string) {
   if (!supabaseReady || !isUuid(productId)) return;
