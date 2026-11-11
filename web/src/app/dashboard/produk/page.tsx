@@ -7,6 +7,7 @@ import { deleteProduct, saveProduct, setProductStatus } from "../actions";
 import { SubmitButton } from "../SubmitButton";
 import { SafeForm } from "../SafeForm";
 import { SafeAction } from "../SafeAction";
+import { DashSearchable } from "@/components/dashboard/DashSearchable";
 import { GalleryField } from "@/components/dashboard/GalleryField";
 import { AreaMapField } from "@/components/dashboard/AreaMapField";
 import { RejectProductForm } from "@/components/dashboard/RejectProductForm";
@@ -234,11 +235,26 @@ function ProductList({
   approvedByOwner: Map<string, number>;
 }) {
   return (
-    <ul className="dash-list">
+    <DashSearchable placeholder="Cari nama produk, penjual, harga…">
       {items.map((p) => {
         const kind = submissionKind(p, approvedByOwner);
+        const searchText = [
+          p.title,
+          p.price_label,
+          p.kind,
+          p.badge,
+          p.status,
+          p.owner?.full_name,
+          p.service_area,
+        ]
+          .filter(Boolean)
+          .join(" ");
         return (
-          <li key={p.id} className="dash-row dash-row--product">
+          <li
+            key={p.id}
+            className="dash-row dash-row--product"
+            data-search={searchText}
+          >
             <div className="dash-row__top">
               {p.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -306,7 +322,7 @@ function ProductList({
           </li>
         );
       })}
-    </ul>
+    </DashSearchable>
   );
 }
 

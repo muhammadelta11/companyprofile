@@ -3,6 +3,15 @@
 import { useState, useTransition } from "react";
 import type { ActionResult } from "./actions";
 
+function emitToast(message: string) {
+  try {
+    sessionStorage.setItem("dash-toast", message);
+  } catch {
+    /* ignore */
+  }
+  window.dispatchEvent(new CustomEvent("dash-toast", { detail: { message } }));
+}
+
 export function SafeAction({
   action,
   children,
@@ -29,6 +38,12 @@ export function SafeAction({
           start(async () => {
             const result = await action();
             setError(result?.error ?? null);
+            if (result?.message) {
+              emitToast(result.message);
+              if (/Sandi sementara/i.test(result.message)) {
+                window.alert(result.message);
+              }
+            }
           });
         }}
       >

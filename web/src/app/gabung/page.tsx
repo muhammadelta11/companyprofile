@@ -123,7 +123,7 @@ async function GabungContent() {
           <div className="apage-section-head">
             <p className="eyebrow">Form</p>
             <h2>Daftar sekarang</h2>
-            <p>Data dikirim lewat WhatsApp — belum perlu akun.</p>
+            <p>Isi data + WhatsApp. Setelah diterima admin, akun login dibuat otomatis.</p>
           </div>
           <JoinForm />
         </section>

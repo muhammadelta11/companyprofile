@@ -35,6 +35,8 @@ export function JoinForm() {
   const [role, setRole] = useState<RoleId>("member");
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [kind, setKind] = useState("fisik");
   const [detail, setDetail] = useState("");
   const [website, setWebsite] = useState("");
@@ -53,6 +55,8 @@ export function JoinForm() {
     `Halo Mas'ud, saya ingin gabung sebagai *${selected.label}* di masudeltamamy.com.`,
     `Nama: ${name || "-"}`,
     `Kota: ${city || "-"}`,
+    email ? `Email: ${email}` : null,
+    phone ? `WA: ${phone}` : null,
     role === "mitra" ? `Jenis produk: ${kind}` : null,
     `${selected.detailLabel}: ${detail || "-"}`,
   ]
@@ -73,6 +77,8 @@ export function JoinForm() {
           city,
           productKind: kind,
           detail,
+          email,
+          phone,
           website,
           startedAt: startedAt.current,
           turnstileToken: String(fd.get("cf-turnstile-response") ?? ""),
@@ -131,6 +137,29 @@ export function JoinForm() {
             placeholder="Domisili"
           />
         </label>
+        {role === "mitra" || role === "member" ? (
+          <>
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="untuk login nanti"
+                required
+              />
+            </label>
+            <label>
+              WhatsApp
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="08…"
+                required
+              />
+            </label>
+          </>
+        ) : null}
         {role === "mitra" ? (
           <label className="full">
             Jenis produk

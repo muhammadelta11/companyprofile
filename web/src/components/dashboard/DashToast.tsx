@@ -27,7 +27,8 @@ export function DashToast() {
 
   useEffect(() => {
     if (!msg) return;
-    const t = window.setTimeout(() => setMsg(null), 3200);
+    const ms = msg.length > 60 ? 8000 : 3200;
+    const t = window.setTimeout(() => setMsg(null), ms);
     return () => window.clearTimeout(t);
   }, [msg]);
 

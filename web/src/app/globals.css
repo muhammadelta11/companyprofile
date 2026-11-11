@@ -2553,6 +2553,21 @@ html[data-intro="on"] body { overflow: hidden; }
   border-color: rgba(180, 35, 24, 0.25);
   color: #b42318;
 }
+.pendaftar__provision {
+  margin-top: 0.15rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.75rem;
+  border: 1px dashed rgba(194, 65, 12, 0.35);
+  background: #fff7ed;
+}
+.pendaftar__provision > summary {
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: #c2410c;
+}
+.pendaftar__provision[open] > summary { margin-bottom: 0.55rem; }
+.pendaftar__provision .form-stack { gap: 0.55rem; }
 .pendaftar .dash-empty {
   margin: 0;
   padding: 1rem 0.95rem;
@@ -4050,6 +4065,66 @@ div.sheet__install { cursor: default; }
 .shop-cta--tentang { background: linear-gradient(120deg, #f8fafc, #e0f2fe); }
 
 /* �� Market marketplace �� */
+
+.catalog-search {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.catalog-search__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.catalog-search input[type="search"] {
+  width: 100%;
+  min-height: 2.55rem;
+  padding: 0.65rem 2.4rem 0.65rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.92rem;
+  box-shadow: 0 1px 2px rgba(10, 31, 92, 0.04);
+}
+.catalog-search input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.catalog-search input[type="search"]:focus {
+  outline: 2px solid rgba(20, 184, 166, 0.35);
+  outline-offset: 1px;
+  border-color: rgba(13, 148, 136, 0.45);
+}
+.catalog-search__clear {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.3rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.catalog-search__clear:hover { color: var(--ink); background: var(--bg); }
+.catalog-search--dash {
+  margin-bottom: 0.65rem;
+}
+.dash-search-wrap { display: grid; gap: 0.35rem; }
+.tr-catalog { display: grid; gap: 0.75rem; }
 
 .mk-toolbar {
   display: grid;

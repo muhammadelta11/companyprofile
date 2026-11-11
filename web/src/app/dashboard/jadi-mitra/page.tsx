@@ -50,7 +50,8 @@ async function MitraApply() {
       .maybeSingle(),
   ]);
 
-  const waiting = Boolean(pending || profile?.mitra_apply_at);
+  // Hanya antrean yang masih new/contacted — jangan terkunci oleh mitra_apply_at lama.
+  const waiting = Boolean(pending);
 
   return (
     <>

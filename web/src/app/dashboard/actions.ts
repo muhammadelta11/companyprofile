@@ -7,7 +7,7 @@ import { collectUrls, removeUnusedMedia } from "@/lib/media-storage";
 import { createClient } from "@/lib/supabase/server";
 import { processUploadImage } from "@/lib/image";
 
-export type ActionResult = { error?: string };
+export type ActionResult = { error?: string; message?: string };
 
 type Supa = Awaited<ReturnType<typeof createClient>>;
 
@@ -20,14 +20,42 @@ function friendlyError(e: unknown) {
   return msg;
 }
 
-async function act(work: () => Promise<void>): Promise<ActionResult> {
+async function act(work: () => Promise<string | void>): Promise<ActionResult> {
   try {
-    await work();
-    return {};
+    const message = await work();
+    return message ? { message } : {};
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     return { error: friendlyError(e) };
   }
+}
+
+function tempPassword(length = 10) {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  let out = "";
+  for (let i = 0; i < length; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
+function parseApplicationContact(detail: string | null | undefined) {
+  const lines = (detail ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const email =
+    lines
+      .find((l) => /^email\s*:/i.test(l))
+      ?.replace(/^email\s*:\s*/i, "")
+      .trim()
+      .toLowerCase() ?? "";
+  const phone =
+    lines
+      .find((l) => /^(wa|whatsapp|telepon|phone)\s*:/i.test(l))
+      ?.replace(/^(wa|whatsapp|telepon|phone)\s*:\s*/i, "")
+      .trim() ?? "";
+  return { email, phone };
 }
 
 function text(fd: FormData, key: string, max = 500) {
@@ -280,25 +308,159 @@ export async function setApplicationStatus(id: string, status: string): Promise<
       const value = pick(status, ["new", "contacted", "approved", "rejected"] as const, "new");
       const { data: app, error: readErr } = await supabase
         .from("applications")
-        .select("id, role, applicant_id")
+        .select("id, role, name, city, detail, applicant_id")
         .eq("id", id)
         .maybeSingle();
       check(readErr);
+      if (!app) throw new Error("Pendaftar tidak ditemukan.");
+
       check((await supabase.from("applications").update({ status: value }).eq("id", id)).error);
 
-      // Terima pengajuan mitra dari member → aktifkan akun mitra
-      if (value === "approved" && app?.role === "mitra" && app.applicant_id) {
-        check(
-          (
-            await supabase
-              .from("profiles")
-              .update({ role: "mitra", status: "active" })
-              .eq("id", app.applicant_id)
-          ).error
-        );
+      let message: string | undefined;
+
+      // Terima → pastikan ada akun di Anggota (aktifkan yang sudah ada, atau buat baru).
+      if (value === "approved" && (app.role === "mitra" || app.role === "member")) {
+        if (app.applicant_id) {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const adminSb = createAdminClient();
+          check(
+            (
+              await adminSb
+                .from("profiles")
+                .update({
+                  role: app.role === "mitra" ? "mitra" : "member",
+                  status: "active",
+                  mitra_apply_at: null,
+                })
+                .eq("id", app.applicant_id)
+            ).error
+          );
+          message =
+            app.role === "mitra"
+              ? "Mitra diaktifkan. Cek menu Anggota."
+              : "Member diaktifkan. Cek menu Anggota.";
+        } else {
+          message = await provisionAccountFromApplication(app);
+        }
       }
       refresh();
+      return message;
   });
+}
+
+/** Buat akun dari pendaftar Gabung yang sudah diterima tapi belum punya profil. */
+export async function createAccountFromApplication(fd: FormData): Promise<ActionResult> {
+  return act(async () => {
+    await requireUser(["admin"]);
+    const supabase = await createClient();
+    const id = text(fd, "id");
+    if (!id) throw new Error("Pendaftar tidak valid.");
+
+    const { data: app, error } = await supabase
+      .from("applications")
+      .select("id, role, name, city, detail, applicant_id, status")
+      .eq("id", id)
+      .maybeSingle();
+    check(error);
+    if (!app) throw new Error("Pendaftar tidak ditemukan.");
+    if (app.applicant_id) throw new Error("Pendaftar ini sudah punya akun di Anggota.");
+    if (app.role !== "mitra" && app.role !== "member") {
+      throw new Error("Hanya mitra/member yang dibuatkan akun otomatis.");
+    }
+
+    const emailOverride = text(fd, "email", 160).toLowerCase();
+    const phoneOverride = text(fd, "phone", 30);
+    const passwordOverride = text(fd, "password", 72);
+
+    const message = await provisionAccountFromApplication(app, {
+      email: emailOverride || undefined,
+      phone: phoneOverride || undefined,
+      password: passwordOverride || undefined,
+    });
+
+    if (app.status !== "approved") {
+      check((await supabase.from("applications").update({ status: "approved" }).eq("id", id)).error);
+    }
+    refresh();
+    return message;
+  });
+}
+
+async function provisionAccountFromApplication(
+  app: {
+    id: string;
+    role: string;
+    name: string;
+    city: string | null;
+    detail: string | null;
+    applicant_id: string | null;
+  },
+  overrides?: { email?: string; phone?: string; password?: string }
+) {
+  const parsed = parseApplicationContact(app.detail);
+  const email = (overrides?.email || parsed.email).trim().toLowerCase();
+  const phone = (overrides?.phone || parsed.phone).trim();
+  if (!email || !email.includes("@")) {
+    throw new Error(
+      "Belum ada email di data pendaftar. Isi email di form “Buat akun”, atau Tambah anggota manual."
+    );
+  }
+
+  const password = overrides?.password && overrides.password.length >= 8
+    ? overrides.password
+    : tempPassword();
+  const role = app.role === "mitra" ? "mitra" : "member";
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  const adminSb = createAdminClient();
+  const { data, error } = await adminSb.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      full_name: app.name,
+      phone: phone || null,
+      city: app.city || null,
+      role,
+    },
+  });
+  if (error) {
+    if (/already|registered|exists/i.test(error.message)) {
+      throw new Error(
+        `Email ${email} sudah terdaftar. Aktifkan lewat menu Anggota, atau hubungkan akun yang sudah ada.`
+      );
+    }
+    throw new Error(error.message);
+  }
+  if (!data.user) throw new Error("Gagal membuat akun.");
+
+  check(
+    (
+      await adminSb
+        .from("profiles")
+        .update({
+          full_name: app.name,
+          phone: orNull(phone),
+          city: orNull(app.city ?? ""),
+          email,
+          role,
+          status: "active",
+          mitra_apply_at: null,
+        })
+        .eq("id", data.user.id)
+    ).error
+  );
+
+  check(
+    (
+      await adminSb
+        .from("applications")
+        .update({ applicant_id: data.user.id })
+        .eq("id", app.id)
+    ).error
+  );
+
+  return `Akun dibuat di Anggota. Email: ${email} · Sandi sementara: ${password}`;
 }
 
 const MITRA_CATEGORIES = [

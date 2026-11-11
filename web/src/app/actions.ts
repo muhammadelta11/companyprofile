@@ -325,6 +325,8 @@ export async function submitApplication(input: {
   city: string;
   productKind: string;
   detail: string;
+  email?: string;
+  phone?: string;
   website?: string;
   startedAt?: number;
   turnstileToken?: string;
@@ -344,13 +346,29 @@ export async function submitApplication(input: {
   const name = input.name.trim().slice(0, 120);
   if (!name) return { error: "Nama wajib diisi." };
 
+  const email = (input.email ?? "").trim().toLowerCase().slice(0, 160);
+  const phone = (input.phone ?? "").trim().slice(0, 30);
+  if (input.role === "mitra" || input.role === "member") {
+    if (!email || !email.includes("@")) return { error: "Email wajib diisi." };
+    if (!phone) return { error: "Nomor WhatsApp wajib diisi." };
+  }
+
+  const detail = [
+    input.detail.trim().slice(0, 800) || null,
+    email ? `Email: ${email}` : null,
+    phone ? `WA: ${phone}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 1000);
+
   const supabase = await createClient();
   const { error } = await supabase.from("applications").insert({
     role: input.role,
     name,
     city: input.city.trim().slice(0, 120) || null,
     product_kind: input.role === "mitra" ? input.productKind.slice(0, 40) : null,
-    detail: input.detail.trim().slice(0, 1000) || null,
+    detail: detail || null,
   });
   if (error) return { error: "Gagal menyimpan pendaftaran. Coba lagi." };
   return { ok: true };

@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ProductItem } from "@/lib/product";
 import { productChatHref } from "@/lib/access-policy";
+import { matchesQuery } from "@/lib/catalog-search";
 import { sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
+import { CatalogSearch } from "@/components/CatalogSearch";
 import { OrderLink } from "@/components/OrderLink";
 
 const SCOPES = [
@@ -94,6 +96,7 @@ export function MarketCatalog({
   /** Sudah login & tidak suspended → chat langsung; kalau false tombol Chat wajib masuk. */
   canChat?: boolean;
 }) {
+  const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [scope, setScope] = useState<ScopeId>("all");
   const [sort, setSort] = useState<SortId>("featured");
@@ -124,14 +127,36 @@ export function MarketCatalog({
 
   const visible = useMemo(() => {
     const filtered = products.filter(
-      (p) => matchesCategory(p, safeCategory) && matchesScope(p, safeScope)
+      (p) =>
+        matchesCategory(p, safeCategory) &&
+        matchesScope(p, safeScope) &&
+        matchesQuery(
+          [
+            p.title,
+            p.badge,
+            p.price_label,
+            p.kind,
+            p.service_area,
+            sellerLabel(p),
+            p.owner?.shop_name,
+            p.owner?.full_name,
+            p.owner?.city,
+          ],
+          query
+        )
     );
     return sortProducts(filtered, sort);
-  }, [products, safeCategory, safeScope, sort]);
+  }, [products, safeCategory, safeScope, sort, query]);
 
   return (
     <div className="mk">
       <div className="mk-toolbar mk-toolbar--compact">
+        <CatalogSearch
+          value={query}
+          onChange={setQuery}
+          placeholder="Cari produk, penjual, kategori…"
+          label="Cari produk"
+        />
         <div className="mk-toolbar__chips" role="tablist" aria-label="Filter produk">
           <button
             type="button"
@@ -175,6 +200,7 @@ export function MarketCatalog({
         <div className="mk-toolbar__foot">
           <p className="mk-toolbar__meta">
             <strong>{visible.length}</strong> produk
+            {query.trim() ? " cocok" : ""}
           </p>
           <div className="mk-toolbar__chips mk-toolbar__chips--sort" role="tablist" aria-label="Urutan">
             {SORTS.map((s) => (
@@ -255,7 +281,11 @@ export function MarketCatalog({
       </div>
 
       {visible.length === 0 ? (
-        <p className="mk__empty">Belum ada produk di filter ini.</p>
+        <p className="mk__empty">
+          {query.trim()
+            ? "Tidak ada produk yang cocok. Coba kata lain atau hapus pencarian."
+            : "Belum ada produk di filter ini."}
+        </p>
       ) : null}
     </div>
   );

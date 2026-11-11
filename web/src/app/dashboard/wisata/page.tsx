@@ -6,6 +6,7 @@ import { deleteTrip, saveTrip } from "../actions";
 import { SubmitButton } from "../SubmitButton";
 import { SafeForm } from "../SafeForm";
 import { SafeAction } from "../SafeAction";
+import { DashSearchable } from "@/components/dashboard/DashSearchable";
 import { GalleryField } from "@/components/dashboard/GalleryField";
 import { DashHead, DashLoading, Empty } from "../ui";
 
@@ -47,9 +48,15 @@ async function Trips() {
         <TripForm />
       </details>
       {trips.length ? (
-        <ul className="dash-list">
+        <DashSearchable placeholder="Cari paket, tag, durasi, harga…">
           {trips.map((t) => (
-            <li key={t.id} className="dash-row dash-row--product">
+            <li
+              key={t.id}
+              className="dash-row dash-row--product"
+              data-search={[t.title, t.tag, t.duration, t.price_label, t.summary]
+                .filter(Boolean)
+                .join(" ")}
+            >
               <div className="dash-row__top">
                 {t.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -84,7 +91,7 @@ async function Trips() {
               </details>
             </li>
           ))}
-        </ul>
+        </DashSearchable>
       ) : (
         <Empty>Belum ada paket wisata.</Empty>
       )}

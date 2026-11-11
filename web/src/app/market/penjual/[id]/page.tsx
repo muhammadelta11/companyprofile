@@ -3,10 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppPage } from "@/components/AppPage";
-import { OrderLink } from "@/components/OrderLink";
+import { MarketCatalog } from "@/components/market/MarketCatalog";
 import { ShareBar } from "@/components/ShareBar";
 import { SITE } from "@/data/site";
-import { productChatHref } from "@/lib/access-policy";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductsBySeller, getPublicSeller } from "@/lib/content";
 import { sellerInitials, storeDisplayName } from "@/lib/product";
@@ -211,57 +210,7 @@ async function PenjualDetail({ params }: Props) {
           </div>
 
           {products.length ? (
-            <div className="mk__grid">
-              {products.map((p) => (
-                <article key={p.id} className={`mk-card mk-card--compact mk-card--${p.kind}`}>
-                  <Link href={`/market/${p.id}`} className="mk-card__media">
-                    {p.image_url ? (
-                      <Image
-                        src={p.image_url}
-                        alt={p.title}
-                        width={400}
-                        height={300}
-                        sizes="160px"
-                      />
-                    ) : (
-                      <span className="mk-card__art" aria-hidden="true">
-                        <strong>{p.kind === "fisik" ? "Fisik" : "Digital"}</strong>
-                        <small>{p.badge ?? "Market"}</small>
-                      </span>
-                    )}
-                    {p.badge ? <span className="mk-card__badge">{p.badge}</span> : null}
-                  </Link>
-                  <div className="mk-card__body">
-                    <h3>
-                      <Link href={`/market/${p.id}`}>{p.title}</Link>
-                    </h3>
-                    <p className="mk-card__seller">{name}</p>
-                    <div className="mk-card__foot">
-                      <strong>{p.price_label ?? "Hubungi WA"}</strong>
-                      <div className="mk-card__actions">
-                        <Link
-                          href={productChatHref(p.id, canChat)}
-                          className="btn btn-outline mk-card__chat"
-                        >
-                          Chat
-                        </Link>
-                        <OrderLink
-                          className="btn btn-teal mk-card__buy"
-                          productId={p.id}
-                          title={p.title}
-                          priceLabel={p.price_label}
-                          shippingMode={p.shipping_mode}
-                          serviceArea={p.service_area}
-                          kind={p.kind}
-                        >
-                          Order
-                        </OrderLink>
-                      </div>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <MarketCatalog products={products} canChat={canChat} />
           ) : (
             <p className="mk-store__empty">Belum ada produk tayang dari etalase ini.</p>
           )}

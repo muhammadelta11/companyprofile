@@ -105,12 +105,16 @@ export function SafeForm({
       // Tutup panel edit + toast sebelum/saat remount refresh
       const details = formRef.current?.closest("details");
       if (details) details.open = false;
+      const toastText = result.message || successMessage;
       try {
-        sessionStorage.setItem("dash-toast", successMessage);
+        sessionStorage.setItem("dash-toast", toastText);
       } catch {
         /* ignore */
       }
-      window.setTimeout(() => emitToast(successMessage), 50);
+      window.setTimeout(() => emitToast(toastText), 50);
+      if (result.message && /Sandi sementara/i.test(result.message)) {
+        window.setTimeout(() => window.alert(result.message), 80);
+      }
       successGen.current += 1;
       return { ok: true, gen: successGen.current };
     },

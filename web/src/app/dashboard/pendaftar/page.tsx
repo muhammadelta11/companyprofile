@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { CreateAccountFromApp } from "@/components/dashboard/CreateAccountFromApp";
 import { deleteApplication, setApplicationStatus } from "../actions";
 import { SafeAction } from "../SafeAction";
 import { Badge, DashHead, DashLoading, Empty, formatDate } from "../ui";
@@ -57,7 +58,7 @@ async function Applications() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("applications")
-    .select("id, role, name, city, product_kind, detail, status, created_at")
+    .select("id, role, name, city, product_kind, detail, status, applicant_id, created_at")
     .order("created_at", { ascending: false })
     .limit(200);
   const apps = data ?? [];
@@ -68,7 +69,7 @@ async function Applications() {
     <div className="pendaftar">
       <DashHead
         title="Pendaftar"
-        text="Antrean dari form Gabung / Jadi Mitra. Proses yang baru dulu."
+        text="Antrean dari form Gabung / Jadi Mitra. Terima mitra/member = aktifkan atau buat akun di Anggota."
       />
 
       <section className="pendaftar__panel">
@@ -114,6 +115,7 @@ function AppList({
     product_kind: string | null;
     detail: string | null;
     status: string;
+    applicant_id: string | null;
     created_at: string;
   }[];
   mode: "waiting" | "done";
@@ -122,6 +124,8 @@ function AppList({
     <ul className="pendaftar__list">
       {items.map((a) => {
         const info = parseDetail(a.detail);
+        const needsAccount =
+          !a.applicant_id && (a.role === "mitra" || a.role === "member");
         return (
           <li key={a.id} className="pendaftar__item">
             <div className="pendaftar__row">
@@ -130,6 +134,11 @@ function AppList({
                   {a.name}
                   <Badge value={a.role} />
                   <Badge value={a.status} label={APP_STATUS[a.status] ?? a.status} />
+                  {a.applicant_id ? (
+                    <Badge value="akun" label="Sudah punya akun" />
+                  ) : needsAccount ? (
+                    <Badge value="pending" label="Belum ada akun" />
+                  ) : null}
                 </strong>
                 <small>
                   {[applyKind(a), a.city, a.product_kind, formatDate(a.created_at)]
@@ -188,6 +197,14 @@ function AppList({
                 Hapus
               </SafeAction>
             </div>
+
+            {needsAccount ? (
+              <CreateAccountFromApp
+                applicationId={a.id}
+                defaultEmail={info.email}
+                defaultPhone={info.wa}
+              />
+            ) : null}
           </li>
         );
       })}
