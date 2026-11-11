@@ -15,6 +15,7 @@ import {
   breadcrumbJsonLd,
   imageObjectsJsonLd,
   pageMetadata,
+  parseIdrPrice,
   plainText,
 } from "@/lib/seo";
 
@@ -75,6 +76,7 @@ async function WisataDetail({ params }: Props) {
   const others = (await getTrips()).filter((t) => t.id !== trip.id).slice(0, 3);
   const images = mergeGallery(trip.image_url, trip.gallery);
   const path = `/wisata/${trip.id}`;
+  const tripPrice = parseIdrPrice(trip.price_label);
 
   return (
     <AppPage>
@@ -92,9 +94,11 @@ async function WisataDetail({ params }: Props) {
               ? {
                   offers: {
                     "@type": "Offer",
-                    description: trip.price_label,
+                    name: trip.price_label,
                     priceCurrency: "IDR",
                     url: absoluteUrl(path),
+                    availability: "https://schema.org/InStock",
+                    ...(tripPrice != null ? { price: tripPrice } : {}),
                   },
                 }
               : {}),

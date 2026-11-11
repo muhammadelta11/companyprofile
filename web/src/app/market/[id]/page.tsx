@@ -126,6 +126,7 @@ async function MarketDetail({ params }: Props) {
             priceLabel: product.price_label,
             kind: product.kind,
             sellerName,
+            shippingMode: product.shipping_mode,
           }),
           breadcrumbJsonLd([
             { name: "Beranda", path: "/" },

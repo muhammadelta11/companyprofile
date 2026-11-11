@@ -1,7 +1,104 @@
 import type { Metadata } from "next";
 import { SITE } from "@/data/site";
+import type { ShippingMode } from "@/lib/product";
 
 export const SITE_URL = "https://masudeltamamy.com";
+const RETURN_POLICY_ID = `${SITE_URL}/#merchant-return-policy`;
+
+/** Ambil angka IDR dari label bebas. Contoh: "Rp 25.000", "Mulai 1,5jt", "50rb". */
+export function parseIdrPrice(label?: string | null): number | null {
+  if (!label?.trim()) return null;
+  const lower = label.trim().toLowerCase().replace(/\s+/g, " ");
+
+  const jt = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:jt|juta)\b/);
+  if (jt) {
+    const n = Number(jt[1].replace(",", "."));
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 1_000_000);
+  }
+  const rb = lower.match(/(\d+(?:[.,]\d+)?)\s*(?:rb|ribu)\b/);
+  if (rb) {
+    const n = Number(rb[1].replace(",", "."));
+    if (Number.isFinite(n) && n > 0) return Math.round(n * 1_000);
+  }
+
+  const match = label.replace(/rp\.?/gi, "").replace(/idr/gi, "").match(/(\d[\d.,]*)/);
+  if (!match) return null;
+  let token = match[1];
+  if (token.includes(",") && token.includes(".")) {
+    token = token.replace(/\./g, "").replace(",", ".");
+  } else if (token.includes(",")) {
+    const parts = token.split(",");
+    token =
+      parts.length === 2 && parts[1].length <= 2
+        ? `${parts[0].replace(/\./g, "")}.${parts[1]}`
+        : token.replace(/,/g, "");
+  } else if (token.includes(".")) {
+    const parts = token.split(".");
+    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+      token = token.replace(/\./g, "");
+    }
+  }
+  const value = Number(token);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  return Math.round(value);
+}
+
+function merchantReturnPolicyGlobal() {
+  return {
+    "@type": "MerchantReturnPolicy",
+    "@id": RETURN_POLICY_ID,
+    name: "Kebijakan pengembalian Market",
+    applicableCountry: "ID",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 7,
+    returnMethod: "https://schema.org/ReturnByMail",
+    returnFees: "https://schema.org/ReturnFeesCustomerResponsibility",
+  };
+}
+
+function offerReturnPolicy(kind: string) {
+  if (kind === "digital") {
+    return {
+      "@type": "MerchantReturnPolicy",
+      applicableCountry: "ID",
+      returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+    };
+  }
+  return { "@id": RETURN_POLICY_ID };
+}
+
+function offerShippingDetails(mode?: ShippingMode | null, kind?: string) {
+  const m = mode ?? (kind === "digital" ? "digital" : null);
+  // Hanya mode dengan ongkir pasti (0). Area/nasional: ongkir via WA — jangan klaim gratis.
+  if (m !== "digital" && m !== "pickup") return null;
+  return {
+    "@type": "OfferShippingDetails",
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: "ID",
+    },
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: 0,
+      currency: "IDR",
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: m === "digital" ? 1 : 0,
+        unitCode: "DAY",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 0,
+        unitCode: "DAY",
+      },
+    },
+  };
+}
 
 /** Gambar default untuk share / Open Graph (banner utama situs). */
 export const DEFAULT_OG_IMAGE = "/og-default.jpg?v=2";
@@ -146,6 +243,7 @@ export function organizationJsonLd() {
       addressCountry: "ID",
     },
     sameAs: [SITE.github].filter(Boolean),
+    hasMerchantReturnPolicy: merchantReturnPolicyGlobal(),
   };
 }
 
@@ -213,25 +311,36 @@ export function productJsonLd(input: {
   priceLabel?: string | null;
   kind: string;
   sellerName: string;
+  shippingMode?: ShippingMode | null;
 }) {
   const desc = plainText(input.description, 300);
   const imgs = uniqueImages(input.image, input.images);
+  const price = parseIdrPrice(input.priceLabel);
+  const shipping = offerShippingDetails(input.shippingMode, input.kind);
   const offers: Record<string, unknown> = {
     "@type": "Offer",
     url: absoluteUrl(`/market/${input.id}`),
     availability: "https://schema.org/InStock",
+    itemCondition: "https://schema.org/NewCondition",
+    priceCurrency: "IDR",
     seller: {
       "@type": "Organization",
       name: input.sellerName,
     },
+    hasMerchantReturnPolicy: offerReturnPolicy(input.kind),
   };
-  // Harga teks bebas ("Mulai Rp 1,5jt") — jangan paksa angka palsu.
-  if (input.priceLabel)
+  if (input.priceLabel) offers.name = input.priceLabel;
+  // Google Merchant Listing: wajib angka price (> 0). Jangan kirim priceSpecification kosong.
+  if (price != null) {
+    offers.price = price;
     offers.priceSpecification = {
-      "@type": "PriceSpecification",
-      description: input.priceLabel,
+      "@type": "UnitPriceSpecification",
+      price,
       priceCurrency: "IDR",
+      ...(input.priceLabel ? { description: input.priceLabel } : {}),
     };
+  }
+  if (shipping) offers.shippingDetails = shipping;
 
   return {
     "@context": "https://schema.org",
