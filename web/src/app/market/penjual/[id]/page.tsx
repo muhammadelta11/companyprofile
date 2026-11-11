@@ -6,6 +6,8 @@ import { AppPage } from "@/components/AppPage";
 import { OrderLink } from "@/components/OrderLink";
 import { ShareBar } from "@/components/ShareBar";
 import { SITE } from "@/data/site";
+import { productChatHref } from "@/lib/access-policy";
+import { getCurrentUser } from "@/lib/auth";
 import { getProductsBySeller, getPublicSeller } from "@/lib/content";
 import { sellerInitials, storeDisplayName } from "@/lib/product";
 import { hasSellerCredentials } from "@/lib/seller-creds";
@@ -57,7 +59,8 @@ async function PenjualDetail({ params }: Props) {
   const seller = await getPublicSeller(id);
   if (!seller) notFound();
 
-  const products = await getProductsBySeller(id);
+  const [products, user] = await Promise.all([getProductsBySeller(id), getCurrentUser()]);
+  const canChat = Boolean(user && user.status !== "suspended");
   const name = storeDisplayName(seller);
   const initials = sellerInitials(name) || "M";
   const covers = products.map((p) => p.image_url).filter(Boolean).slice(0, 3) as string[];
@@ -235,17 +238,25 @@ async function PenjualDetail({ params }: Props) {
                     <p className="mk-card__seller">{name}</p>
                     <div className="mk-card__foot">
                       <strong>{p.price_label ?? "Hubungi WA"}</strong>
-                      <OrderLink
-                        className="btn btn-teal mk-card__buy"
-                        productId={p.id}
-                        title={p.title}
-                        priceLabel={p.price_label}
-                        shippingMode={p.shipping_mode}
-                        serviceArea={p.service_area}
-                        kind={p.kind}
-                      >
-                        Order
-                      </OrderLink>
+                      <div className="mk-card__actions">
+                        <Link
+                          href={productChatHref(p.id, canChat)}
+                          className="btn btn-outline mk-card__chat"
+                        >
+                          Chat
+                        </Link>
+                        <OrderLink
+                          className="btn btn-teal mk-card__buy"
+                          productId={p.id}
+                          title={p.title}
+                          priceLabel={p.price_label}
+                          shippingMode={p.shipping_mode}
+                          serviceArea={p.service_area}
+                          kind={p.kind}
+                        >
+                          Order
+                        </OrderLink>
+                      </div>
                     </div>
                   </div>
                 </article>

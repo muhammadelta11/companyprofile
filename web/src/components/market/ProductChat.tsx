@@ -141,7 +141,7 @@ export function ProductChat({
   }
 
   return (
-    <section className="mk-chat" aria-labelledby="mk-chat-title">
+    <section id="chat-produk" className="mk-chat" aria-labelledby="mk-chat-title">
       <div className="mk-chat__head">
         <h2 id="mk-chat-title">Chat produk</h2>
         <p className="mk-chat__hint">
@@ -154,9 +154,9 @@ export function ProductChat({
 
       {!canChat ? (
         <div className="mk-chat__gate">
-          <p>Masuk untuk chat dengan penjual. Riwayat tersimpan di akunmu.</p>
-          <Link className="btn btn-outline" href={loginHref(next)}>
-            Masuk / daftar
+          <p>Chat wajib login. Setelah masuk, kamu langsung bisa kirim pesan di sini.</p>
+          <Link className="btn btn-teal" href={loginHref(next)}>
+            Masuk untuk chat
           </Link>
         </div>
       ) : isSellerView ? (

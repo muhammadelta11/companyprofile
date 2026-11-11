@@ -4656,14 +4656,28 @@ div.sheet__install { cursor: default; }
   justify-content: space-between;
 }
 .mk-card__foot > strong { color: var(--teal-deep); font-size: 0.95rem; }
-.mk-card__actions { display: flex; gap: 0.4rem; align-items: center; }
+.mk-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+}
 .mk-card__more {
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--teal);
   text-decoration: none;
 }
-.mk-card__buy { padding: 0.4rem 0.75rem; font-size: 0.78rem; border-radius: 999px; }
+.mk-card__buy,
+.mk-card__chat {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.78rem;
+  border-radius: 999px;
+  width: 100%;
+  justify-content: center;
+  min-width: 0;
+}
 .mk-card--mini { box-shadow: none; }
 .mk-card--mini .mk-card__body { padding: 1rem; }
 
@@ -5953,12 +5967,16 @@ a.pj-card:hover { transform: translateY(-3px); }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.apage .mk-card--compact .mk-card__buy {
+.apage .mk-card--compact .mk-card__actions {
+  grid-template-columns: 1fr 1fr;
+}
+.apage .mk-card--compact .mk-card__buy,
+.apage .mk-card--compact .mk-card__chat {
   width: 100%;
   max-width: 100%;
   min-width: 0;
   justify-content: center;
-  padding: 0.42rem 0.55rem;
+  padding: 0.42rem 0.45rem;
   font-size: 0.74rem;
 }
 

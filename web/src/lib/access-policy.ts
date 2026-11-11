@@ -38,3 +38,9 @@ export function loginHref(next?: string) {
   if (!target) return "/masuk";
   return `/masuk?next=${encodeURIComponent(target)}`;
 }
+
+/** Chat produk: sudah login → langsung ke chat; belum → wajib masuk dulu. */
+export function productChatHref(productId: string, loggedIn: boolean) {
+  const next = `/market/${productId}#chat-produk`;
+  return loggedIn ? next : loginHref(next);
+}

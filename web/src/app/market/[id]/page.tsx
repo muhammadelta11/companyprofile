@@ -13,6 +13,7 @@ import { ProductViewBeacon } from "@/components/market/ProductViewBeacon";
 import { RichHtml } from "@/components/RichHtml";
 import { ShareBar } from "@/components/ShareBar";
 import { productExtra } from "@/data/catalog-extra";
+import { productChatHref } from "@/lib/access-policy";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
@@ -245,6 +246,9 @@ async function MarketDetail({ params, searchParams }: Props) {
               >
                 Order via WhatsApp
               </OrderLink>
+              <Link className="btn btn-outline" href={productChatHref(product.id, canChat)}>
+                Chat penjual
+              </Link>
               <Link className="btn btn-outline" href="/market">
                 Kembali
               </Link>
@@ -309,17 +313,25 @@ async function MarketDetail({ params, searchParams }: Props) {
                     </p>
                     <div className="mk-card__foot">
                       <strong>{p.price_label ?? "Hubungi WA"}</strong>
-                      <OrderLink
-                        className="btn btn-teal mk-card__buy"
-                        productId={p.id}
-                        title={p.title}
-                        priceLabel={p.price_label}
-                        shippingMode={p.shipping_mode}
-                        serviceArea={p.service_area}
-                        kind={p.kind}
-                      >
-                        Order
-                      </OrderLink>
+                      <div className="mk-card__actions">
+                        <Link
+                          href={productChatHref(p.id, canChat)}
+                          className="btn btn-outline mk-card__chat"
+                        >
+                          Chat
+                        </Link>
+                        <OrderLink
+                          className="btn btn-teal mk-card__buy"
+                          productId={p.id}
+                          title={p.title}
+                          priceLabel={p.price_label}
+                          shippingMode={p.shipping_mode}
+                          serviceArea={p.service_area}
+                          kind={p.kind}
+                        >
+                          Order
+                        </OrderLink>
+                      </div>
                     </div>
                   </div>
                 </article>

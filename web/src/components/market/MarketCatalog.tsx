@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ProductItem } from "@/lib/product";
+import { productChatHref } from "@/lib/access-policy";
 import { sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
 import { OrderLink } from "@/components/OrderLink";
 
@@ -85,7 +86,14 @@ function matchesCategory(p: ProductItem, category: string) {
   return badgeKey(p.badge) === category;
 }
 
-export function MarketCatalog({ products }: { products: ProductItem[] }) {
+export function MarketCatalog({
+  products,
+  canChat = false,
+}: {
+  products: ProductItem[];
+  /** Sudah login & tidak suspended → chat langsung; kalau false tombol Chat wajib masuk. */
+  canChat?: boolean;
+}) {
   const [category, setCategory] = useState("all");
   const [scope, setScope] = useState<ScopeId>("all");
   const [sort, setSort] = useState<SortId>("featured");
@@ -220,17 +228,26 @@ export function MarketCatalog({ products }: { products: ProductItem[] }) {
               </p>
               <div className="mk-card__foot">
                 <strong>{p.price_label ?? "Hubungi WA"}</strong>
-                <OrderLink
-                  className="btn btn-teal mk-card__buy"
-                  productId={p.id}
-                  title={p.title}
-                  priceLabel={p.price_label}
-                  shippingMode={p.shipping_mode}
-                  serviceArea={p.service_area}
-                  kind={p.kind}
-                >
-                  Order
-                </OrderLink>
+                <div className="mk-card__actions">
+                  <Link
+                    href={productChatHref(p.id, canChat)}
+                    className="btn btn-outline mk-card__chat"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Chat
+                  </Link>
+                  <OrderLink
+                    className="btn btn-teal mk-card__buy"
+                    productId={p.id}
+                    title={p.title}
+                    priceLabel={p.price_label}
+                    shippingMode={p.shipping_mode}
+                    serviceArea={p.service_area}
+                    kind={p.kind}
+                  >
+                    Order
+                  </OrderLink>
+                </div>
               </div>
             </div>
           </article>
