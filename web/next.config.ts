@@ -32,10 +32,10 @@ const nextConfig: NextConfig = {
         value: [
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
-          "style-src 'self' 'unsafe-inline'",
+          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "img-src 'self' data: blob: https:",
-          "font-src 'self' data:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com",
+          "font-src 'self' data: https://fonts.gstatic.com",
+          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com https://nominatim.openstreetmap.org",
           "frame-src https://challenges.cloudflare.com",
           "worker-src 'self' blob:",
           "object-src 'none'",

@@ -20,8 +20,10 @@ const STATUS_LABEL: Record<string, string> = {
   other: "Lainnya",
 };
 
-export function Badge({ value }: { value: string }) {
-  return <span className={`badge badge--${value}`}>{STATUS_LABEL[value] ?? value}</span>;
+export function Badge({ value, label }: { value: string; label?: string }) {
+  return (
+    <span className={`badge badge--${value}`}>{label ?? STATUS_LABEL[value] ?? value}</span>
+  );
 }
 
 export function DashHead({ title, text }: { title: string; text?: string }) {

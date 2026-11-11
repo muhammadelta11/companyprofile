@@ -111,16 +111,20 @@ export function DashNav({ name, role }: { name: string; role: Role }) {
           if (!items.length) return null;
           return (
             <div key={group.title} className="dash-nav__group">
-              <p className="dash-nav__title">{group.title}</p>
-              {items.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
-                >
-                  {l.label}
-                </Link>
-              ))}
+              <p className="dash-nav__title" aria-hidden="true">
+                {group.title}
+              </p>
+              <div className="dash-nav__links" role="group" aria-label={group.title}>
+                {items.map((l) => (
+                  <Link
+                    key={l.href}
+                    href={l.href}
+                    className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
             </div>
           );
         })}

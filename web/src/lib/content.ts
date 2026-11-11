@@ -90,6 +90,8 @@ export async function getProducts(): Promise<ProductItem[]> {
   if (!supabaseReady) return FALLBACK_PRODUCTS;
 
   const withOwner =
+    "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area, area_lat, area_lng, area_radius_km, view_count, created_at, owner:profiles!products_owner_id_fkey(id, full_name, city)";
+  const withOwnerNoArea =
     "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area, view_count, created_at, owner:profiles!products_owner_id_fkey(id, full_name, city)";
   const withOwnerNoViews =
     "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area, created_at, owner:profiles!products_owner_id_fkey(id, full_name, city)";
@@ -109,6 +111,16 @@ export async function getProducts(): Promise<ProductItem[]> {
 
   if (!first.error && first.data) {
     return normalizeProducts(first.data);
+  }
+
+  const firstNoArea = await publicClient()
+    .from("products")
+    .select(withOwnerNoArea)
+    .eq("status", "approved")
+    .order("view_count", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (!firstNoArea.error && firstNoArea.data) {
+    return normalizeProducts(firstNoArea.data);
   }
 
   const second = await publicClient()
@@ -183,11 +195,19 @@ function normalizeProducts(rows: unknown[]): ProductItem[] {
       owner_id: typeof row.owner_id === "string" ? row.owner_id : null,
       shipping_mode,
       service_area: typeof row.service_area === "string" ? row.service_area : null,
+      area_lat: numOrNull(row.area_lat),
+      area_lng: numOrNull(row.area_lng),
+      area_radius_km: numOrNull(row.area_radius_km),
       owner,
       view_count: Number.isFinite(views) ? Math.max(0, Math.floor(views)) : 0,
       created_at: typeof row.created_at === "string" ? row.created_at : null,
     };
   });
+}
+
+function numOrNull(value: unknown) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
 }
 
 export async function getTrips(): Promise<TripItem[]> {

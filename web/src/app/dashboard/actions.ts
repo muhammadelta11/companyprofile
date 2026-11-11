@@ -134,6 +134,22 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
         ["pickup", "area", "nationwide", "digital"] as const,
         kind === "digital" ? "digital" : "area"
       );
+      const latRaw = text(fd, "area_lat", 32);
+      const lngRaw = text(fd, "area_lng", 32);
+      const radiusRaw = text(fd, "area_radius_km", 16);
+      const lat = latRaw === "" ? null : Number(latRaw);
+      const lng = lngRaw === "" ? null : Number(lngRaw);
+      const radius = radiusRaw === "" ? null : Number(radiusRaw);
+      const hasPoint =
+        lat != null &&
+        lng != null &&
+        Number.isFinite(lat) &&
+        Number.isFinite(lng) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180;
+
       const row: Record<string, unknown> = {
         title: text(fd, "title", 160),
         kind,
@@ -144,6 +160,12 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
         image_url: cover,
         shipping_mode,
         service_area: orNull(text(fd, "service_area", 160)),
+        area_lat: hasPoint ? lat : null,
+        area_lng: hasPoint ? lng : null,
+        area_radius_km:
+          hasPoint && radius != null && Number.isFinite(radius) && radius > 0
+            ? Math.min(100, Math.max(0.5, radius))
+            : null,
       };
       if (!row.title) throw new Error("Nama produk wajib diisi.");
       if (user.role === "admin") {
@@ -368,6 +390,57 @@ export async function deleteApplication(id: string): Promise<ActionResult> {
   });
 }
 
+export async function createMember(fd: FormData): Promise<ActionResult> {
+  return act(async () => {
+      await requireUser(["admin"]);
+      const email = text(fd, "email", 160).toLowerCase();
+      const password = text(fd, "password", 72);
+      const fullName = text(fd, "full_name", 120);
+      const phone = text(fd, "phone", 30);
+      const city = text(fd, "city", 120);
+      const role = pick(text(fd, "role"), ["admin", "mitra", "member"] as const, "member");
+      const status = pick(text(fd, "status"), ["pending", "active", "suspended"] as const, "active");
+
+      if (!email || !email.includes("@")) throw new Error("Email tidak valid.");
+      if (password.length < 8) throw new Error("Kata sandi minimal 8 karakter.");
+      if (!fullName) throw new Error("Nama wajib diisi.");
+
+      const { createAdminClient } = await import("@/lib/supabase/admin");
+      const adminSb = createAdminClient();
+      const { data, error } = await adminSb.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: fullName,
+          phone: phone || null,
+          city: city || null,
+          role,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (!data.user) throw new Error("Gagal membuat akun.");
+
+      // Trigger handle_new_user sudah buat profil; rapikan peran/status sesuai pilihan admin.
+      check(
+        (
+          await adminSb
+            .from("profiles")
+            .update({
+              full_name: fullName,
+              phone: orNull(phone),
+              city: orNull(city),
+              role,
+              status,
+              email,
+            })
+            .eq("id", data.user.id)
+        ).error
+      );
+      refresh();
+  });
+}
+
 export async function updateMember(id: string, fd: FormData): Promise<ActionResult> {
   return act(async () => {
       const admin = await requireUser(["admin"]);
@@ -375,7 +448,20 @@ export async function updateMember(id: string, fd: FormData): Promise<ActionResu
       const supabase = await createClient();
       const role = pick(text(fd, "role"), ["admin", "mitra", "member"] as const, "member");
       const status = pick(text(fd, "status"), ["pending", "active", "suspended"] as const, "active");
-      check((await supabase.from("profiles").update({ role, status }).eq("id", id)).error);
+      check(
+        (
+          await supabase
+            .from("profiles")
+            .update({
+              full_name: orNull(text(fd, "full_name", 120)),
+              phone: orNull(text(fd, "phone", 30)),
+              city: orNull(text(fd, "city", 120)),
+              role,
+              status,
+            })
+            .eq("id", id)
+        ).error
+      );
       refresh();
   });
 }
@@ -624,6 +710,7 @@ export async function saveFaq(fd: FormData): Promise<ActionResult> {
       await requireUser(["admin"]);
       const supabase = await createClient();
       const id = text(fd, "id");
+      const logId = text(fd, "log_id");
       const row = {
         question: text(fd, "question", 300),
         answer: text(fd, "answer", 2000),
@@ -641,6 +728,10 @@ export async function saveFaq(fd: FormData): Promise<ActionResult> {
           : await supabase.from("faqs").insert(row)
         ).error
       );
+      // Dari antrean "Ajari" → hapus log supaya hilang dari list.
+      if (logId) {
+        await supabase.from("delta_logs").delete().eq("id", logId);
+      }
       updateTag("faqs");
       refresh();
   });

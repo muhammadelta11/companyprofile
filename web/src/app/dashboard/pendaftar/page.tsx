@@ -13,11 +13,12 @@ export default function PendaftarPage() {
   );
 }
 
-const ACTIONS = [
-  { status: "contacted", label: "Sudah dihubungi" },
-  { status: "approved", label: "Terima" },
-  { status: "rejected", label: "Tolak" },
-];
+const APP_STATUS: Record<string, string> = {
+  new: "Baru",
+  contacted: "Sudah dihubungi",
+  approved: "Diterima",
+  rejected: "Ditolak",
+};
 
 function applyKind(a: {
   role: string;
@@ -26,17 +27,29 @@ function applyKind(a: {
 }) {
   if (a.role === "mitra") {
     const fromDash = /dashboard jadi-mitra|Sumber: dashboard/i.test(a.detail ?? "");
-    return {
-      label: fromDash
-        ? "Ajuan pertama jadi mitra (dari akun member)"
-        : "Daftar mitra (form Gabung publik)",
-      tone: "new" as const,
-    };
+    return fromDash ? "Ajuan jadi mitra (dari akun)" : "Daftar mitra (form Gabung)";
   }
-  if (a.role === "partner") {
-    return { label: "Kolaborasi / partner", tone: "add" as const };
-  }
-  return { label: "Gabung member", tone: "add" as const };
+  if (a.role === "partner") return "Kolaborasi / partner";
+  return "Gabung member";
+}
+
+function parseDetail(detail: string | null) {
+  if (!detail) return { lines: [] as string[], email: "", wa: "" };
+  const lines = detail
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const email =
+    lines.find((l) => /^email\s*:/i.test(l))?.replace(/^email\s*:\s*/i, "") ?? "";
+  const wa =
+    lines.find((l) => /^(wa|whatsapp|telepon|phone)\s*:/i.test(l))?.replace(
+      /^(wa|whatsapp|telepon|phone)\s*:\s*/i,
+      ""
+    ) ?? "";
+  const rest = lines.filter(
+    (l) => !/^email\s*:/i.test(l) && !/^(wa|whatsapp|telepon|phone)\s*:/i.test(l)
+  );
+  return { lines: rest, email, wa };
 }
 
 async function Applications() {
@@ -52,37 +65,46 @@ async function Applications() {
   const done = apps.filter((a) => a.status === "approved" || a.status === "rejected");
 
   return (
-    <>
+    <div className="pendaftar">
       <DashHead
         title="Pendaftar"
-        text="Orang yang mendaftar lewat Gabung atau tombol Jadi Mitra. Fokus dulu yang status Baru."
+        text="Antrean dari form Gabung / Jadi Mitra. Proses yang baru dulu."
       />
 
-      {waiting.length ? (
-        <section className="dash-section">
-          <h2 className="dash-sub">
-            Perlu ditindak <span className="dash-count">{waiting.length}</span>
-          </h2>
-          <AppList items={waiting} />
-        </section>
-      ) : (
-        <Empty>Tidak ada pendaftar menunggu.</Empty>
-      )}
+      <section className="pendaftar__panel">
+        <header className="pendaftar__head">
+          <div>
+            <h2>Perlu ditindak</h2>
+            <p>Baru atau sudah dihubungi — belum final.</p>
+          </div>
+          <span className="pendaftar__count">{waiting.length}</span>
+        </header>
+        {waiting.length ? (
+          <AppList items={waiting} mode="waiting" />
+        ) : (
+          <Empty>Tidak ada antrean.</Empty>
+        )}
+      </section>
 
       {done.length ? (
-        <section className="dash-section">
-          <h2 className="dash-sub">
-            Sudah diproses <span className="dash-count">{done.length}</span>
-          </h2>
-          <AppList items={done} />
+        <section className="pendaftar__panel">
+          <header className="pendaftar__head">
+            <div>
+              <h2>Selesai</h2>
+              <p>Sudah diterima atau ditolak.</p>
+            </div>
+            <span className="pendaftar__count">{done.length}</span>
+          </header>
+          <AppList items={done} mode="done" />
         </section>
       ) : null}
-    </>
+    </div>
   );
 }
 
 function AppList({
   items,
+  mode,
 }: {
   items: {
     id: string;
@@ -94,46 +116,77 @@ function AppList({
     status: string;
     created_at: string;
   }[];
+  mode: "waiting" | "done";
 }) {
   return (
-    <ul className="dash-list">
+    <ul className="pendaftar__list">
       {items.map((a) => {
-        const kind = applyKind(a);
+        const info = parseDetail(a.detail);
         return (
-          <li key={a.id} className="dash-row dash-row--product">
-            <div className="dash-row__top dash-row__top--text">
-              <div className="dash-row__main">
+          <li key={a.id} className="pendaftar__item">
+            <div className="pendaftar__row">
+              <div className="pendaftar__main">
                 <strong>
                   {a.name}
                   <Badge value={a.role} />
-                  <span className={`dash-chip dash-chip--${kind.tone}`}>{kind.label}</span>
+                  <Badge value={a.status} label={APP_STATUS[a.status] ?? a.status} />
                 </strong>
                 <small>
-                  {[a.city, a.product_kind, formatDate(a.created_at)].filter(Boolean).join(" · ")}
+                  {[applyKind(a), a.city, a.product_kind, formatDate(a.created_at)]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </small>
-                {a.detail ? <p className="dash-row__text">{a.detail}</p> : null}
+                {info.lines.length ? (
+                  <p className="pendaftar__detail">{info.lines.join(" · ")}</p>
+                ) : null}
+                {info.email || info.wa ? (
+                  <p className="pendaftar__contact">
+                    {info.email ? <span>{info.email}</span> : null}
+                    {info.wa ? <span>WA {info.wa}</span> : null}
+                  </p>
+                ) : null}
               </div>
             </div>
-            <div className="dash-row__foot">
-              <Badge value={a.status} />
-              <div className="dash-row__actions">
-                {ACTIONS.filter((x) => x.status !== a.status).map((x) => (
+
+            <div className="pendaftar__acts">
+              {mode === "waiting" ? (
+                <>
+                  {a.status !== "contacted" ? (
+                    <SafeAction
+                      className="pendaftar__btn"
+                      action={setApplicationStatus.bind(null, a.id, "contacted")}
+                    >
+                      Sudah dihubungi
+                    </SafeAction>
+                  ) : null}
                   <SafeAction
-                    key={x.status}
-                    className="btn btn-outline btn-sm"
-                    action={setApplicationStatus.bind(null, a.id, x.status)}
+                    className="pendaftar__btn pendaftar__btn--ok"
+                    action={setApplicationStatus.bind(null, a.id, "approved")}
                   >
-                    {x.label}
+                    Terima
                   </SafeAction>
-                ))}
+                  <SafeAction
+                    className="pendaftar__btn pendaftar__btn--warn"
+                    action={setApplicationStatus.bind(null, a.id, "rejected")}
+                  >
+                    Tolak
+                  </SafeAction>
+                </>
+              ) : (
                 <SafeAction
-                  className="btn btn-danger btn-sm dash-row__danger"
-                  confirm={`Hapus pendaftar ${a.name}?`}
-                  action={deleteApplication.bind(null, a.id)}
+                  className="pendaftar__btn"
+                  action={setApplicationStatus.bind(null, a.id, "new")}
                 >
-                  Hapus
+                  Kembalikan
                 </SafeAction>
-              </div>
+              )}
+              <SafeAction
+                className="pendaftar__btn pendaftar__btn--danger"
+                confirm={`Hapus pendaftar ${a.name}?`}
+                action={deleteApplication.bind(null, a.id)}
+              >
+                Hapus
+              </SafeAction>
             </div>
           </li>
         );

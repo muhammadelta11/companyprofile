@@ -23,6 +23,14 @@ type Faq = {
   published: boolean;
 };
 
+type Log = {
+  id: string;
+  page: string | null;
+  question: string;
+  confidence: string | null;
+  created_at: string;
+};
+
 async function Delta() {
   await requireUser(["admin"]);
   const supabase = await createClient();
@@ -35,125 +43,176 @@ async function Delta() {
       .from("delta_logs")
       .select("id, page, question, confidence, created_at")
       .order("created_at", { ascending: false })
-      .limit(60),
+      .limit(40),
   ]);
 
+  const list = (faqs ?? []) as Faq[];
+  const needsTeach = ((logs ?? []) as Log[]).filter((l) => l.confidence === "low");
+
   return (
-    <>
-      <DashHead
-        title="Delta"
-        text="Ajari Delta jawaban baru. Kata kunci menentukan kapan jawaban dipakai."
-      />
+    <div className="delta-admin">
+      <DashHead title="Delta" text="Ajari asisten chat lewat Q&A singkat." />
 
-      <details className="dash-create">
-        <summary>+ Tambah jawaban</summary>
-        <FaqForm />
-      </details>
+      {needsTeach.length ? (
+        <section className="delta-admin__panel delta-admin__panel--queue">
+          <header className="delta-admin__head">
+            <div>
+              <h2>Antrean</h2>
+              <p>Pertanyaan yang masih kurang yakin — ajari atau abaikan.</p>
+            </div>
+            <span className="delta-admin__count">{needsTeach.length}</span>
+          </header>
 
-      <h2 className="dash-sub">Jawaban tambahan</h2>
-      {faqs?.length ? (
-        <ul className="dash-list">
-          {(faqs as Faq[]).map((f) => (
-            <li key={f.id} className="dash-row dash-row--product">
-              <div className="dash-row__top dash-row__top--text">
-                <div className="dash-row__main">
-                  <strong>{f.question}</strong>
-                  <small>{f.tags.join(", ") || "tanpa kata kunci"}</small>
-                  <p className="dash-row__text">{f.answer}</p>
+          <ul className="delta-admin__list">
+            {needsTeach.map((l) => (
+              <li key={l.id} className="delta-admin__item">
+                <div className="delta-admin__row">
+                  <div className="delta-admin__main">
+                    <strong>{l.question}</strong>
+                    <small>
+                      {formatDate(l.created_at)}
+                      {l.page ? ` · ${shortPage(l.page)}` : ""}
+                    </small>
+                  </div>
+                  <div className="delta-admin__acts">
+                    <SafeAction
+                      className="delta-admin__btn"
+                      action={deleteDeltaLog.bind(null, l.id)}
+                    >
+                      Abaikan
+                    </SafeAction>
+                  </div>
                 </div>
-              </div>
-              <div className="dash-row__foot">
-                {f.published ? (
-                  <span className="badge badge--approved">Aktif</span>
-                ) : (
-                  <span className="badge badge--pending">Nonaktif</span>
-                )}
-                <div className="dash-row__actions">
-                  <SafeAction
-                    className="btn btn-danger btn-sm dash-row__danger"
-                    confirm="Hapus jawaban ini?"
-                    action={deleteFaq.bind(null, f.id)}
-                  >
-                    Hapus
-                  </SafeAction>
-                </div>
-              </div>
-              <details className="dash-edit">
-                <summary>Edit</summary>
-                <FaqForm faq={f} />
-              </details>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <Empty>Belum ada jawaban tambahan. Jawaban bawaan Delta tetap aktif.</Empty>
-      )}
-
-      <h2 className="dash-sub">Pertanyaan pengunjung terbaru</h2>
-      {logs?.length ? (
-        <ul className="dash-list">
-          {logs.map((l) => (
-            <li key={l.id} className="dash-row dash-row--product">
-              <div className="dash-row__top dash-row__top--text">
-                <div className="dash-row__main">
-                  <strong>{l.question}</strong>
-                  <small>
-                    {formatDate(l.created_at)} · {l.page ?? "/"}
-                  </small>
-                </div>
-              </div>
-              <div className="dash-row__foot">
-                {l.confidence === "low" ? (
-                  <span className="badge badge--rejected">Belum terjawab</span>
-                ) : (
-                  <span className="badge badge--approved">Terjawab</span>
-                )}
-                <div className="dash-row__actions">
-                  <SafeAction
-                    className="btn btn-outline btn-sm"
-                    action={deleteDeltaLog.bind(null, l.id)}
-                  >
-                    Hapus
-                  </SafeAction>
-                </div>
-              </div>
-              {l.confidence === "low" ? (
-                <details className="dash-edit">
-                  <summary>Jadikan jawaban</summary>
-                  <FaqForm question={l.question} />
+                <details className="delta-admin__teach">
+                  <summary>Ajari</summary>
+                  <FaqForm question={l.question} logId={l.id} compact />
                 </details>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <Empty>Belum ada pertanyaan.</Empty>
-      )}
-    </>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      <section className="delta-admin__panel">
+        <header className="delta-admin__head">
+          <div>
+            <h2>Jawaban</h2>
+            <p>Q&A aktif yang dipakai Delta.</p>
+          </div>
+          <span className="delta-admin__count">{list.length}</span>
+        </header>
+
+        <details className="delta-admin__add">
+          <summary>+ Tambah</summary>
+          <FaqForm />
+        </details>
+
+        {list.length ? (
+          <ul className="delta-admin__list">
+            {list.map((f) => (
+              <li key={f.id} className="delta-admin__item">
+                <div className="delta-admin__row">
+                  <div className="delta-admin__main">
+                    <strong>
+                      {f.question}
+                      <span
+                        className={`delta-admin__dot ${f.published ? "is-on" : "is-off"}`}
+                        title={f.published ? "Aktif" : "Nonaktif"}
+                      />
+                    </strong>
+                    <small>{clip(f.answer, 110)}</small>
+                  </div>
+                  <div className="delta-admin__acts">
+                    <SafeAction
+                      className="delta-admin__btn delta-admin__btn--danger"
+                      confirm="Hapus jawaban ini?"
+                      action={deleteFaq.bind(null, f.id)}
+                    >
+                      Hapus
+                    </SafeAction>
+                  </div>
+                </div>
+                <details className="delta-admin__teach">
+                  <summary>Edit</summary>
+                  <FaqForm faq={f} />
+                </details>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Empty>Belum ada jawaban tersimpan.</Empty>
+        )}
+      </section>
+    </div>
   );
 }
 
-function FaqForm({ faq, question }: { faq?: Faq; question?: string }) {
+function clip(text: string, max: number) {
+  const t = text.replace(/\s+/g, " ").trim();
+  return t.length > max ? `${t.slice(0, max - 1)}…` : t;
+}
+
+function shortPage(page: string) {
+  if (page.length <= 28) return page;
+  return `${page.slice(0, 12)}…${page.slice(-10)}`;
+}
+
+function FaqForm({
+  faq,
+  question,
+  logId,
+  compact,
+}: {
+  faq?: Faq;
+  question?: string;
+  logId?: string;
+  compact?: boolean;
+}) {
   return (
-    <SafeForm action={saveFaq} className="form-stack">
+    <SafeForm
+      action={saveFaq}
+      className="form-stack delta-admin__form"
+      persistKey={faq ? `faq-${faq.id}` : logId ? `faq-log-${logId}` : "faq-new"}
+      successMessage="Tersimpan. Antrean diperbarui."
+    >
       {faq ? <input type="hidden" name="id" value={faq.id} /> : null}
+      {logId ? <input type="hidden" name="log_id" value={logId} /> : null}
       <label>
         Pertanyaan
-        <input name="question" defaultValue={faq?.question ?? question ?? ""} required />
+        <input
+          name="question"
+          defaultValue={faq?.question ?? question ?? ""}
+          required
+          maxLength={240}
+          placeholder="Contoh: Berapa harga website?"
+        />
       </label>
       <label>
-        Jawaban Delta
-        <textarea name="answer" rows={3} defaultValue={faq?.answer ?? ""} required />
+        Jawaban
+        <textarea
+          name="answer"
+          rows={compact ? 2 : 3}
+          defaultValue={faq?.answer ?? ""}
+          required
+          maxLength={2000}
+          placeholder="Jawaban singkat…"
+        />
       </label>
-      <label>
-        Kata kunci (pisahkan dengan koma)
-        <input name="tags" defaultValue={faq?.tags.join(", ") ?? ""} placeholder="harga, landing page" />
-      </label>
-      <label className="form-check">
-        <input name="published" type="checkbox" defaultChecked={faq?.published ?? true} />
-        Aktif
-      </label>
-      <SubmitButton>{faq ? "Simpan perubahan" : "Simpan jawaban"}</SubmitButton>
+      <div className="form-row">
+        <label>
+          Kata pemicu
+          <input
+            name="tags"
+            defaultValue={faq?.tags.join(", ") ?? ""}
+            placeholder="harga, website"
+          />
+        </label>
+        <label className="form-check delta-admin__check">
+          <input name="published" type="checkbox" defaultChecked={faq?.published ?? true} />
+          Aktif
+        </label>
+      </div>
+      <SubmitButton>{faq ? "Simpan" : "Simpan jawaban"}</SubmitButton>
     </SafeForm>
   );
 }

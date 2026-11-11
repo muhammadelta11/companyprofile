@@ -8,6 +8,7 @@ import { SubmitButton } from "../SubmitButton";
 import { SafeForm } from "../SafeForm";
 import { SafeAction } from "../SafeAction";
 import { GalleryField } from "@/components/dashboard/GalleryField";
+import { AreaMapField } from "@/components/dashboard/AreaMapField";
 import { RejectProductForm } from "@/components/dashboard/RejectProductForm";
 import { SHIPPING_OPTIONS, type ShippingMode } from "@/lib/product";
 import { Badge, DashHead, DashLoading, Empty, formatDate } from "../ui";
@@ -35,6 +36,9 @@ type ProductRow = {
   gallery: string[] | null;
   shipping_mode: ShippingMode | null;
   service_area: string | null;
+  area_lat: number | null;
+  area_lng: number | null;
+  area_radius_km: number | null;
   reject_reason: string | null;
   status: string;
   sort: number;
@@ -74,23 +78,27 @@ async function Products({ searchParams }: Props) {
   const isAdmin = user.role === "admin";
   const sumber: Sumber = isAdmin ? parseSumber(sp.sumber) : "sendiri";
 
-  let query = supabase
-    .from("products")
-    .select(
-      "id, title, kind, badge, price_label, description, image_url, gallery, shipping_mode, service_area, reject_reason, status, sort, owner_id, created_at, updated_at, owner:profiles!products_owner_id_fkey(full_name)"
-    )
-    .order("created_at", { ascending: false });
+  const selectFull =
+    "id, title, kind, badge, price_label, description, image_url, gallery, shipping_mode, service_area, area_lat, area_lng, area_radius_km, reject_reason, status, sort, owner_id, created_at, updated_at, owner:profiles!products_owner_id_fkey(full_name)";
+  const selectLegacy =
+    "id, title, kind, badge, price_label, description, image_url, gallery, shipping_mode, service_area, reject_reason, status, sort, owner_id, created_at, updated_at, owner:profiles!products_owner_id_fkey(full_name)";
 
-  if (!isAdmin) {
-    query = query.eq("owner_id", user.id);
-  } else if (sumber === "mitra") {
-    query = query.not("owner_id", "is", null);
-  } else {
-    query = query.is("owner_id", null);
+  function scoped(select: string) {
+    let q = supabase.from("products").select(select).order("created_at", { ascending: false });
+    if (!isAdmin) q = q.eq("owner_id", user.id);
+    else if (sumber === "mitra") q = q.not("owner_id", "is", null);
+    else q = q.is("owner_id", null);
+    return q;
   }
 
-  const { data } = await query;
-  const products = (data ?? []) as unknown as ProductRow[];
+  let { data, error } = await scoped(selectFull);
+  if (error) ({ data, error } = await scoped(selectLegacy));
+  const products = ((data ?? []) as unknown as ProductRow[]).map((p) => ({
+    ...p,
+    area_lat: p.area_lat ?? null,
+    area_lng: p.area_lng ?? null,
+    area_radius_km: p.area_radius_km ?? null,
+  }));
   const canCreate = (isAdmin && sumber === "sendiri") || (!isAdmin && user.status === "active");
 
   const approvedByOwner = new Map<string, number>();
@@ -320,8 +328,25 @@ function ProductForm({ user, product }: { user: CurrentUser; product?: ProductRo
           </select>
         </label>
         <label>
-          Label (mis. Jasa, Makanan)
-          <input name="badge" defaultValue={product?.badge ?? ""} />
+          Kategori
+          <input
+            name="badge"
+            list="product-badge-options"
+            defaultValue={product?.badge ?? ""}
+            placeholder="Makanan, Elektronik, Jasa…"
+          />
+          <datalist id="product-badge-options">
+            <option value="Makanan" />
+            <option value="Minuman" />
+            <option value="Elektronik" />
+            <option value="Fashion" />
+            <option value="Kecantikan" />
+            <option value="Rumah tangga" />
+            <option value="Jasa" />
+            <option value="Digital" />
+            <option value="Pendidikan" />
+            <option value="Lainnya" />
+          </datalist>
         </label>
       </div>
       <div className="form-row">
@@ -336,31 +361,27 @@ function ProductForm({ user, product }: { user: CurrentUser; product?: ProductRo
           </label>
         ) : null}
       </div>
-      <div className="form-row">
-        <label>
-          Cara kirim
-          <select
-            name="shipping_mode"
-            defaultValue={
-              product?.shipping_mode ?? (product?.kind === "digital" ? "digital" : "area")
-            }
-          >
-            {SHIPPING_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Area layanan
-          <input
-            name="service_area"
-            defaultValue={product?.service_area ?? ""}
-            placeholder="Ngawi, Madiun (jika kirim area)"
-          />
-        </label>
-      </div>
+      <label>
+        Cara kirim
+        <select
+          name="shipping_mode"
+          defaultValue={
+            product?.shipping_mode ?? (product?.kind === "digital" ? "digital" : "area")
+          }
+        >
+          {SHIPPING_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <AreaMapField
+        defaultLat={product?.area_lat}
+        defaultLng={product?.area_lng}
+        defaultRadiusKm={product?.area_radius_km}
+        defaultLabel={product?.service_area}
+      />
       <RichTextEditor
         key={product ? `desc-${product.id}` : "desc-new"}
         name="description"

@@ -7,8 +7,7 @@ import type { ProductItem } from "@/lib/product";
 import { sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
 import { OrderLink } from "@/components/OrderLink";
 
-const FILTERS = [
-  { id: "all", label: "Semua" },
+const SCOPES = [
   { id: "digital", label: "Digital" },
   { id: "fisik", label: "Fisik" },
   { id: "official", label: "Official" },
@@ -20,6 +19,9 @@ const SORTS = [
   { id: "newest", label: "Terbaru" },
   { id: "popular", label: "Terpopuler" },
 ] as const;
+
+type ScopeId = "all" | (typeof SCOPES)[number]["id"];
+type SortId = (typeof SORTS)[number]["id"];
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -34,7 +36,6 @@ function isNew(p: ProductItem) {
   return t > 0 && Date.now() - t < 7 * DAY_MS;
 }
 
-/** Unggulan: views + boost produk baru (72 jam). */
 function featuredScore(p: ProductItem) {
   const views = p.view_count ?? 0;
   const ageH = createdMs(p) ? (Date.now() - createdMs(p)) / 3_600_000 : 9999;
@@ -42,7 +43,7 @@ function featuredScore(p: ProductItem) {
   return views * 3 + freshBoost;
 }
 
-function sortProducts(items: ProductItem[], sort: (typeof SORTS)[number]["id"]) {
+function sortProducts(items: ProductItem[], sort: SortId) {
   const list = [...items];
   if (sort === "newest") {
     return list.sort((a, b) => createdMs(b) - createdMs(a));
@@ -59,55 +60,133 @@ function sortProducts(items: ProductItem[], sort: (typeof SORTS)[number]["id"]) 
   });
 }
 
-export function MarketCatalog({ products }: { products: ProductItem[] }) {
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
-  const [sort, setSort] = useState<(typeof SORTS)[number]["id"]>("featured");
+function badgeKey(badge: string | null | undefined) {
+  return (badge ?? "").trim().toLowerCase();
+}
 
-  const list = useMemo(() => {
-    const filtered = products.filter((p) => {
-      if (filter === "all") return true;
-      if (filter === "digital" || filter === "fisik") return p.kind === filter;
-      if (filter === "official") return !p.owner_id;
-      if (filter === "mitra") return !!p.owner_id;
-      return true;
-    });
+function titleCaseBadge(raw: string) {
+  return raw
+    .trim()
+    .split(/\s+/)
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1).toLowerCase() : w))
+    .join(" ");
+}
+
+function matchesScope(p: ProductItem, scope: ScopeId) {
+  if (scope === "all") return true;
+  if (scope === "digital" || scope === "fisik") return p.kind === scope;
+  if (scope === "official") return !p.owner_id;
+  if (scope === "mitra") return !!p.owner_id;
+  return true;
+}
+
+function matchesCategory(p: ProductItem, category: string) {
+  if (category === "all") return true;
+  return badgeKey(p.badge) === category;
+}
+
+export function MarketCatalog({ products }: { products: ProductItem[] }) {
+  const [category, setCategory] = useState("all");
+  const [scope, setScope] = useState<ScopeId>("all");
+  const [sort, setSort] = useState<SortId>("featured");
+
+  const categories = useMemo(() => {
+    const map = new Map<string, { label: string; count: number }>();
+    for (const p of products) {
+      const key = badgeKey(p.badge);
+      if (!key) continue;
+      const label = titleCaseBadge(p.badge!);
+      const prev = map.get(key);
+      if (prev) prev.count += 1;
+      else map.set(key, { label, count: 1 });
+    }
+    return [...map.entries()]
+      .map(([id, v]) => ({ id, label: v.label, count: v.count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, "id"));
+  }, [products]);
+
+  const scopes = useMemo(() => {
+    return SCOPES.filter((s) => products.some((p) => matchesScope(p, s.id)));
+  }, [products]);
+
+  const safeCategory =
+    category === "all" || categories.some((c) => c.id === category) ? category : "all";
+  const safeScope =
+    scope === "all" || scopes.some((s) => s.id === scope) ? scope : "all";
+
+  const visible = useMemo(() => {
+    const filtered = products.filter(
+      (p) => matchesCategory(p, safeCategory) && matchesScope(p, safeScope)
+    );
     return sortProducts(filtered, sort);
-  }, [products, filter, sort]);
+  }, [products, safeCategory, safeScope, sort]);
 
   return (
     <div className="mk">
-      <div className="mk__filters" role="tablist" aria-label="Filter produk">
-        {FILTERS.map((f) => (
+      <div className="mk-toolbar mk-toolbar--compact">
+        <div className="mk-toolbar__chips" role="tablist" aria-label="Filter produk">
           <button
-            key={f.id}
             type="button"
             role="tab"
-            aria-selected={filter === f.id}
-            className={`mk__chip${filter === f.id ? " is-active" : ""}`}
-            onClick={() => setFilter(f.id)}
+            aria-selected={safeCategory === "all" && safeScope === "all"}
+            className={`mk__chip${safeCategory === "all" && safeScope === "all" ? " is-active" : ""}`}
+            onClick={() => {
+              setCategory("all");
+              setScope("all");
+            }}
           >
-            {f.label}
+            Semua
           </button>
-        ))}
-      </div>
+          {categories.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              role="tab"
+              aria-selected={safeCategory === c.id}
+              className={`mk__chip${safeCategory === c.id ? " is-active" : ""}`}
+              onClick={() => setCategory(c.id)}
+            >
+              {c.label}
+            </button>
+          ))}
+          {scopes.length ? <span className="mk-toolbar__sep" aria-hidden="true" /> : null}
+          {scopes.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={safeScope === s.id}
+              className={`mk__chip mk__chip--soft${safeScope === s.id ? " is-active" : ""}`}
+              onClick={() => setScope(safeScope === s.id ? "all" : s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
 
-      <div className="mk__filters mk__filters--sort" role="tablist" aria-label="Urutan produk">
-        {SORTS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={sort === s.id}
-            className={`mk__chip mk__chip--sort${sort === s.id ? " is-active" : ""}`}
-            onClick={() => setSort(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
+        <div className="mk-toolbar__foot">
+          <p className="mk-toolbar__meta">
+            <strong>{visible.length}</strong> produk
+          </p>
+          <div className="mk-toolbar__chips mk-toolbar__chips--sort" role="tablist" aria-label="Urutan">
+            {SORTS.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                aria-selected={sort === s.id}
+                className={`mk__chip mk__chip--sort${sort === s.id ? " is-active" : ""}`}
+                onClick={() => setSort(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="mk__grid">
-        {list.map((p) => (
+        {visible.map((p) => (
           <article key={p.id} className={`mk-card mk-card--compact mk-card--${p.kind}`}>
             <Link href={`/market/${p.id}`} className="mk-card__media">
               {p.image_url ? (
@@ -136,7 +215,9 @@ export function MarketCatalog({ products }: { products: ProductItem[] }) {
                   {sellerLabel(p)}
                 </Link>
               </p>
-              <p className="mk-card__ship">{shippingLabel(p.shipping_mode, p.service_area, p.kind)}</p>
+              <p className="mk-card__ship">
+                {shippingLabel(p.shipping_mode, p.service_area, p.kind, p.area_radius_km)}
+              </p>
               <div className="mk-card__foot">
                 <strong>{p.price_label ?? "Hubungi WA"}</strong>
                 <OrderLink
@@ -156,7 +237,7 @@ export function MarketCatalog({ products }: { products: ProductItem[] }) {
         ))}
       </div>
 
-      {list.length === 0 ? (
+      {visible.length === 0 ? (
         <p className="mk__empty">Belum ada produk di filter ini.</p>
       ) : null}
     </div>

@@ -20,6 +20,9 @@ export type ProductItem = {
   owner_id: string | null;
   shipping_mode?: ShippingMode | null;
   service_area?: string | null;
+  area_lat?: number | null;
+  area_lng?: number | null;
+  area_radius_km?: number | null;
   /** Mitra penjual (null = Official). */
   owner?: ProductSeller | null;
   /** Jumlah buka halaman detail (klik). */
@@ -37,14 +40,33 @@ export const SHIPPING_OPTIONS: { value: ShippingMode; label: string }[] = [
 export function shippingLabel(
   mode?: ShippingMode | null,
   area?: string | null,
-  kind?: "fisik" | "digital"
+  kind?: "fisik" | "digital",
+  radiusKm?: number | null
 ) {
   const m = mode ?? (kind === "digital" ? "digital" : "area");
-  if (m === "pickup") return "Ambil di tempat";
+  if (m === "pickup") {
+    const zone = area?.trim();
+    const r = radiusKm && radiusKm > 0 ? ` (±${radiusKm} km)` : "";
+    return zone ? `Ambil di tempat · ${zone}${r}` : "Ambil di tempat";
+  }
   if (m === "nationwide") return "Kirim seluruh Indonesia";
   if (m === "digital") return "Digital / online";
   const zone = area?.trim();
-  return zone ? `Area: ${zone}` : "Kirim area (tanya penjual)";
+  const r = radiusKm && radiusKm > 0 ? ` (±${radiusKm} km)` : "";
+  return zone ? `Area: ${zone}${r}` : r ? `Kirim area${r}` : "Kirim area (tanya penjual)";
+}
+
+export function hasMapArea(p: {
+  area_lat?: number | null;
+  area_lng?: number | null;
+  area_radius_km?: number | null;
+}) {
+  return (
+    typeof p.area_lat === "number" &&
+    typeof p.area_lng === "number" &&
+    Number.isFinite(p.area_lat) &&
+    Number.isFinite(p.area_lng)
+  );
 }
 
 /** Label penjual untuk UI market. */

@@ -1,28 +1,41 @@
 import Link from "next/link";
-import { SITE } from "@/data/site";
+import { SITE, waLink } from "@/data/site";
+
+const LINKS = [
+  { href: "/layanan", label: "Layanan" },
+  { href: "/market", label: "Market" },
+  { href: "/wisata", label: "Wisata" },
+  { href: "/proyek", label: "Proyek" },
+  { href: "/tentang", label: "Tentang" },
+  { href: "/gabung", label: "Gabung" },
+] as const;
 
 export function SiteFooter() {
   return (
     <footer className="site-footer">
-      <div className="container footer-grid">
-        <div>
-          <strong>{SITE.brand}</strong>
-          <p>
-            Digital partner, market produk, dan wisata — satu ekosistem.
-          </p>
+      <div className="container site-footer__inner">
+        <div className="site-footer__brand">
+          <img src="/icon.svg" alt="" width={28} height={28} />
+          <div>
+            <strong>{SITE.brand}</strong>
+            <span>{SITE.tagline}</span>
+          </div>
         </div>
-        <div className="footer-links">
-          <Link href="/layanan">Layanan</Link>
-          <Link href="/market">Market</Link>
-          <Link href="/wisata">Wisata</Link>
-          <Link href="/proyek">Proyek</Link>
-          <Link href="/tentang">Tentang</Link>
-          <Link href="/gabung">Gabung</Link>
-          <Link href="/masukan">Masukan</Link>
+
+        <nav className="site-footer__nav" aria-label="Footer">
+          {LINKS.map((l) => (
+            <Link key={l.href} href={l.href}>
+              {l.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="site-footer__meta">
+          <a href={waLink(`Halo dari ${SITE.domain}`)} target="_blank" rel="noopener noreferrer">
+            WA {SITE.waDisplay}
+          </a>
+          <span>© 2026 {SITE.domain}</span>
         </div>
-        <p className="footer-copy">
-          © 2026 {SITE.brand} · {SITE.domain}
-        </p>
       </div>
     </footer>
   );

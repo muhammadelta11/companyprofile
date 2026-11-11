@@ -15,7 +15,14 @@ import { productExtra } from "@/data/catalog-extra";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
-import { sellerHref, sellerInitials, sellerLabel, shippingLabel } from "@/lib/product";
+import { ServiceAreaMap } from "@/components/market/ServiceAreaMap";
+import {
+  hasMapArea,
+  sellerHref,
+  sellerInitials,
+  sellerLabel,
+  shippingLabel,
+} from "@/lib/product";
 import {
   breadcrumbJsonLd,
   imageObjectsJsonLd,
@@ -74,7 +81,12 @@ async function MarketDetail({ params }: Props) {
   if (!product) notFound();
 
   const extra = productExtra(product.id, product.title);
-  const ship = shippingLabel(product.shipping_mode, product.service_area, product.kind);
+  const ship = shippingLabel(
+    product.shipping_mode,
+    product.service_area,
+    product.kind,
+    product.area_radius_km
+  );
   const highlights =
     extra?.highlights ??
     [
@@ -151,6 +163,14 @@ async function MarketDetail({ params }: Props) {
           <h1>{product.title}</h1>
           <p className="detail__price">{product.price_label ?? "Hubungi WA"}</p>
           <p className="detail__ship">{ship}</p>
+          {hasMapArea(product) ? (
+            <ServiceAreaMap
+              lat={product.area_lat!}
+              lng={product.area_lng!}
+              radiusKm={product.area_radius_km && product.area_radius_km > 0 ? product.area_radius_km : 5}
+              label={product.service_area}
+            />
+          ) : null}
 
           <Link href={profileHref} className="mk-seller mk-seller--link" aria-label={`Profil ${sellerName}`}>
             <div className="mk-seller__avatar" aria-hidden="true">
@@ -244,7 +264,7 @@ async function MarketDetail({ params }: Props) {
                       <Link href={`/market/${p.id}`}>{p.title}</Link>
                     </h3>
                     <p className="mk-card__ship">
-                      {shippingLabel(p.shipping_mode, p.service_area, p.kind)}
+                      {shippingLabel(p.shipping_mode, p.service_area, p.kind, p.area_radius_km)}
                     </p>
                     <div className="mk-card__foot">
                       <strong>{p.price_label ?? "Hubungi WA"}</strong>

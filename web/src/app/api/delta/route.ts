@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  DELTA_PROFILE,
-  retrieveFaq,
-} from "@/data/delta-knowledge";
 import { SITE, waLink } from "@/data/site";
-import { getExtraFaqs } from "@/lib/content";
+import { getCurrentUser } from "@/lib/auth";
+import { buildDeltaContext, buildDeltaSystemPrompt } from "@/lib/delta/context";
+import { askGemini, geminiReady, type DeltaHistoryItem } from "@/lib/delta/gemini";
 import { publicClient } from "@/lib/supabase/public";
 import { supabaseReady } from "@/lib/supabase/env";
 import { isHoneypot, isRateLimited, isTooFast } from "@/lib/spam";
@@ -14,7 +12,18 @@ type Body = {
   page?: string;
   website?: string;
   startedAt?: number;
+  history?: DeltaHistoryItem[];
 };
+
+function fallbackReply(message: string, faqAnswer: string, score: number) {
+  const lower = message.toLowerCase();
+  const wantsWa = /whatsapp|hubungi|kontak|chat wa|bicara|human|manusia/.test(lower);
+  if (wantsWa) {
+    return `Oke, langsung aja chat Mas'ud di WA ${SITE.waDisplay}. Nanti aku ikut kasih ringkasan pertanyaanmu biar dia langsung nyambung.`;
+  }
+  if (score >= 2) return faqAnswer;
+  return `Hmm, aku belum nemu jawaban pas. Coba lebih spesifik ya — soal jasa, Market, atau wisata. Atau langsung WA Mas'ud aja biar lebih cepet.`;
+}
 
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as Body;
@@ -23,6 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       reply: "Terima kasih. Tim kami akan meninjau pesanmu.",
       confidence: "low",
+      mode: "guard",
       disclosure: "Delta adalah asisten AI.",
       waUrl: waLink(`Halo dari website ${SITE.domain}`),
       suggestions: ["Hubungkan ke WhatsApp"],
@@ -42,19 +52,47 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Pesan kosong." }, { status: 400 });
   }
 
-  const lower = message.toLowerCase();
-  const wantsWa =
-    /whatsapp|hubungi|kontak|chat wa|bicara|human|manusia/.test(lower);
+  const history = Array.isArray(body.history)
+    ? body.history
+        .filter(
+          (h): h is DeltaHistoryItem =>
+            !!h &&
+            (h.role === "user" || h.role === "delta") &&
+            typeof h.text === "string"
+        )
+        .slice(-8)
+    : [];
 
-  const { faq, score } = retrieveFaq(message, await getExtraFaqs());
+  const [user, built] = await Promise.all([
+    getCurrentUser().catch(() => null),
+    buildDeltaContext(message, page),
+  ]);
 
-  let reply: string;
-  if (wantsWa) {
-    reply = `Siap. Saya Delta — asisten AI Mas'ud El-Tamamy. Untuk obrolan langsung dengan Mas'ud, lanjutkan ke WhatsApp ${SITE.waDisplay}. Saya bisa ikut menyertakan ringkasan pertanyaanmu.`;
-  } else if (score >= 2) {
-    reply = faq.a;
-  } else {
-    reply = `Saya Delta, asisten AI di ${DELTA_PROFILE.brand}. Saya bisa bantu soal profil Mas'ud, jasa web/sistem, Market (beli/jual), dan wisata. Untuk harga final atau deal, konfirmasi via WhatsApp. Coba tanya lebih spesifik, atau ketuk saran di bawah.`;
+  let reply: string | null = null;
+  let mode: "gemini" | "faq" = "faq";
+  let confidence: "high" | "low" = built.score >= 2 ? "high" : "low";
+
+  if (geminiReady()) {
+    try {
+      reply = await askGemini({
+        system: buildDeltaSystemPrompt(user),
+        context: built.context,
+        message,
+        history,
+      });
+      if (reply) {
+        mode = "gemini";
+        confidence = "high";
+      }
+    } catch {
+      reply = null;
+    }
+  }
+
+  if (!reply) {
+    reply = fallbackReply(message, built.faq.a, built.score);
+    mode = "faq";
+    confidence = built.score >= 2 ? "high" : "low";
   }
 
   if (supabaseReady) {
@@ -64,7 +102,7 @@ export async function POST(req: Request) {
         page,
         question: message,
         answer: reply.slice(0, 1000),
-        confidence: score >= 2 ? "high" : "low",
+        confidence,
       });
   }
 
@@ -72,12 +110,13 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     reply,
-    confidence: score >= 2 ? "high" : "low",
+    confidence,
+    mode,
     disclosure:
       "Delta adalah asisten AI. Jawaban bisa tidak sempurna — deal final via WhatsApp.",
     waUrl: waLink(handoffText),
     suggestions:
-      score < 2
+      confidence === "low"
         ? [
             "Layanan apa saja?",
             "Cara order di Market?",

@@ -5,7 +5,6 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 import { BottomNav } from "./BottomNav";
-import { Icon } from "./Icon";
 import { IntroShow } from "./intro/IntroShow";
 import { IntroContext } from "./intro/intro-context";
 
@@ -95,11 +94,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClick={openDelta}
         aria-label="Tanya Delta"
       >
-        <Icon name="spark" size={20} />
+        <img className="delta-fab__mark" src="/icon.svg" alt="" width={22} height={22} />
         <span>Delta</span>
       </button>
       <InstallBanner />
-      {deltaOpen ? <DeltaPanel open={deltaOpen} onClose={closeDelta} /> : null}
+      <DeltaPanel open={deltaOpen} onClose={closeDelta} />
     </IntroContext.Provider>
   );
 }
