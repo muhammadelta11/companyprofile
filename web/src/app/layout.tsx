@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { AppShell } from "@/components/AppShell";
 import { JsonLd } from "@/components/JsonLd";
 import { INTRO_HEAD_SCRIPT } from "@/components/intro/intro-config";
@@ -102,6 +103,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col antialiased">
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
         <AppShell>{children}</AppShell>
+        <Analytics />
       </body>
     </html>
   );

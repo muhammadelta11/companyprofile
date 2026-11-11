@@ -15,6 +15,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
     "@tinymce/tinymce-react": "^6.3.1",
+    "@vercel/analytics": "^2.0.1",
     "framer-motion": "^14.9.1",
     "leaflet": "^1.9.4",
     "next": "16.4.5",
