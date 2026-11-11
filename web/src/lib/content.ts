@@ -89,6 +89,8 @@ export async function getProducts(): Promise<ProductItem[]> {
   cacheLife("minutes");
   if (!supabaseReady) return FALLBACK_PRODUCTS;
 
+  const withOwnerBrand =
+    "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area, area_lat, area_lng, area_radius_km, view_count, created_at, owner:profiles!products_owner_id_fkey(id, full_name, city, shop_name)";
   const withOwner =
     "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area, area_lat, area_lng, area_radius_km, view_count, created_at, owner:profiles!products_owner_id_fkey(id, full_name, city)";
   const withOwnerNoArea =
@@ -101,6 +103,17 @@ export async function getProducts(): Promise<ProductItem[]> {
     "id, title, kind, badge, price_label, description, image_url, gallery, owner_id, shipping_mode, service_area";
   const plainLegacy =
     "id, title, kind, badge, price_label, description, image_url, gallery, owner_id";
+
+  const branded = await publicClient()
+    .from("products")
+    .select(withOwnerBrand)
+    .eq("status", "approved")
+    .order("view_count", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (!branded.error && branded.data) {
+    return normalizeProducts(branded.data);
+  }
 
   const first = await publicClient()
     .from("products")
@@ -170,6 +183,7 @@ function normalizeProducts(rows: unknown[]): ProductItem[] {
         id: String(o.id ?? ""),
         full_name: typeof o.full_name === "string" ? o.full_name : null,
         city: typeof o.city === "string" ? o.city : null,
+        shop_name: typeof o.shop_name === "string" ? o.shop_name : null,
       };
       if (!owner.id) owner = null;
     }
@@ -280,29 +294,35 @@ export async function getProduct(id: string): Promise<ProductItem | null> {
 export type PublicSeller = ProductSeller & {
   kind: "mitra" | "official";
   productCount: number;
+  tagline?: string | null;
+  bio?: string | null;
+  credentials?: import("./seller-creds").SellerCredentials;
 };
 
 /** Profil publik toko / mitra untuk halaman /market/penjual/[id]. */
 export async function getPublicSeller(id: string): Promise<PublicSeller | null> {
+  const { EMPTY_CREDENTIALS, normalizeBrandCerts } = await import("./seller-creds");
   const products = await getProducts();
 
   if (id === "official") {
     const count = products.filter((p) => !p.owner_id).length;
-    if (!count) {
-      return {
-        id: "official",
-        full_name: "Mas'ud El-Tamamy",
-        city: null,
-        kind: "official",
-        productCount: 0,
-      };
-    }
     return {
       id: "official",
       full_name: "Mas'ud El-Tamamy",
-      city: null,
+      shop_name: "Mas'ud El-Tamamy",
+      city: "Ngawi · Semarang",
+      tagline: "Digital · Market · Wisata",
+      bio: "Toko official Mas'ud El-Tamamy — produk digital, fisik, dan jasa. Order dikonfirmasi via WhatsApp.",
       kind: "official",
       productCount: count,
+      credentials: {
+        legal_name: "Mas'ud El-Tamamy",
+        legal_form: "Usaha perseorangan",
+        business_reg_no: null,
+        issued_by: null,
+        tax_status: null,
+        brand_certs: [],
+      },
     };
   }
 
@@ -311,10 +331,60 @@ export async function getPublicSeller(id: string): Promise<PublicSeller | null> 
   if (!list.length) return null;
 
   const fromJoin = list.find((p) => p.owner)?.owner ?? null;
+  let shop_name = fromJoin?.shop_name ?? null;
+  let full_name = fromJoin?.full_name ?? null;
+  let city = fromJoin?.city ?? null;
+  let tagline: string | null = null;
+  let bio: string | null = null;
+  let credentials = { ...EMPTY_CREDENTIALS };
+
+  if (supabaseReady) {
+    const full = await publicClient()
+      .from("profiles")
+      .select(
+        "full_name, city, shop_name, tagline, bio, legal_name, legal_form, business_reg_no, issued_by, tax_status, brand_certs"
+      )
+      .eq("id", id)
+      .maybeSingle();
+    if (!full.error && full.data) {
+      const row = full.data as Record<string, unknown>;
+      full_name = typeof row.full_name === "string" ? row.full_name : full_name;
+      city = typeof row.city === "string" ? row.city : city;
+      shop_name = typeof row.shop_name === "string" ? row.shop_name : shop_name;
+      tagline = typeof row.tagline === "string" ? row.tagline : null;
+      bio = typeof row.bio === "string" ? row.bio : null;
+      credentials = {
+        legal_name: typeof row.legal_name === "string" ? row.legal_name : null,
+        legal_form: typeof row.legal_form === "string" ? row.legal_form : null,
+        business_reg_no: typeof row.business_reg_no === "string" ? row.business_reg_no : null,
+        issued_by: typeof row.issued_by === "string" ? row.issued_by : null,
+        tax_status: typeof row.tax_status === "string" ? row.tax_status : null,
+        brand_certs: normalizeBrandCerts(row.brand_certs),
+      };
+    } else {
+      const branded = await publicClient()
+        .from("profiles")
+        .select("full_name, city, shop_name, tagline, bio")
+        .eq("id", id)
+        .maybeSingle();
+      if (!branded.error && branded.data) {
+        full_name = typeof branded.data.full_name === "string" ? branded.data.full_name : full_name;
+        city = typeof branded.data.city === "string" ? branded.data.city : city;
+        shop_name = typeof branded.data.shop_name === "string" ? branded.data.shop_name : shop_name;
+        tagline = typeof branded.data.tagline === "string" ? branded.data.tagline : null;
+        bio = typeof branded.data.bio === "string" ? branded.data.bio : null;
+      }
+    }
+  }
+
   return {
     id,
-    full_name: fromJoin?.full_name ?? null,
-    city: fromJoin?.city ?? null,
+    full_name,
+    shop_name,
+    city,
+    tagline,
+    bio,
+    credentials,
     kind: "mitra",
     productCount: list.length,
   };

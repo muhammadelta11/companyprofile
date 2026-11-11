@@ -470,18 +470,54 @@ export async function updateProfile(fd: FormData): Promise<ActionResult> {
   return act(async () => {
       const user = await requireUser();
       const supabase = await createClient();
-      check(
-        (
-          await supabase
-            .from("profiles")
-            .update({
-              full_name: orNull(text(fd, "full_name", 120)),
-              phone: orNull(text(fd, "phone", 30)),
-              city: orNull(text(fd, "city", 120)),
-            })
-            .eq("id", user.id)
-        ).error
-      );
+      const { parseBrandCertsText } = await import("@/lib/seller-creds");
+      const payload: Record<string, string | null | ReturnType<typeof parseBrandCertsText>> = {
+        full_name: orNull(text(fd, "full_name", 120)),
+        phone: orNull(text(fd, "phone", 30)),
+        city: orNull(text(fd, "city", 120)),
+      };
+      if (user.role === "mitra" || user.role === "admin") {
+        payload.shop_name = orNull(text(fd, "shop_name", 80));
+        payload.tagline = orNull(text(fd, "tagline", 120));
+        payload.bio = orNull(text(fd, "bio", 800));
+        payload.legal_name = orNull(text(fd, "legal_name", 160));
+        payload.legal_form = orNull(text(fd, "legal_form", 80));
+        payload.business_reg_no = orNull(text(fd, "business_reg_no", 80));
+        payload.issued_by = orNull(text(fd, "issued_by", 120));
+        payload.tax_status = orNull(text(fd, "tax_status", 160));
+        payload.brand_certs = parseBrandCertsText(String(fd.get("brand_certs") ?? ""));
+      }
+      const { error } = await supabase.from("profiles").update(payload).eq("id", user.id);
+      if (error && (user.role === "mitra" || user.role === "admin")) {
+        // Kolom branding/legalitas belum lengkap — degradasi bertahap.
+        const brandOnly = {
+          full_name: payload.full_name,
+          phone: payload.phone,
+          city: payload.city,
+          shop_name: payload.shop_name,
+          tagline: payload.tagline,
+          bio: payload.bio,
+        };
+        const brandErr = (
+          await supabase.from("profiles").update(brandOnly).eq("id", user.id)
+        ).error;
+        if (brandErr) {
+          check(
+            (
+              await supabase
+                .from("profiles")
+                .update({
+                  full_name: payload.full_name,
+                  phone: payload.phone,
+                  city: payload.city,
+                })
+                .eq("id", user.id)
+            ).error
+          );
+        }
+      } else {
+        check(error);
+      }
       refresh();
   });
 }

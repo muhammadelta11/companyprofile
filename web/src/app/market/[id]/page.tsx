@@ -210,13 +210,13 @@ async function MarketDetail({ params, searchParams }: Props) {
             />
           ) : null}
 
-          <Link href={profileHref} className="mk-seller mk-seller--link" aria-label={`Profil ${sellerName}`}>
+          <Link href={profileHref} className="mk-seller mk-seller--link" aria-label={`Etalase ${sellerName}`}>
             <div className="mk-seller__avatar" aria-hidden="true">
               {initials || "M"}
             </div>
             <div className="mk-seller__meta">
               <span className="mk-seller__eyebrow">
-                {product.owner_id ? "Dijual oleh mitra" : "Toko official"}
+                {product.owner_id ? "Etalase mitra" : "Official store"}
               </span>
               <strong className="mk-seller__name">{sellerName}</strong>
               <small>
@@ -224,7 +224,7 @@ async function MarketDetail({ params, searchParams }: Props) {
                   product.owner_id ? "Terverifikasi" : "Official brand",
                   product.owner?.city,
                   fromSeller.length ? `${fromSeller.length + 1} produk` : null,
-                  "Lihat profil →",
+                  "Lihat etalase →",
                 ]
                   .filter(Boolean)
                   .join(" · ")}

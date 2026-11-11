@@ -6,6 +6,7 @@ export type ProductSeller = {
   id: string;
   full_name: string | null;
   city: string | null;
+  shop_name?: string | null;
 };
 
 export type ProductItem = {
@@ -72,8 +73,23 @@ export function hasMapArea(p: {
 /** Label penjual untuk UI market. */
 export function sellerLabel(product: Pick<ProductItem, "owner_id" | "owner">) {
   if (!product.owner_id) return "Official Mas'ud El-Tamamy";
+  const shop = product.owner?.shop_name?.trim();
+  if (shop) return shop;
   const name = product.owner?.full_name?.trim();
   return name || "Mitra terverifikasi";
+}
+
+/** Nama etalase publik (shop_name → full_name → fallback). */
+export function storeDisplayName(input: {
+  kind?: "mitra" | "official";
+  shop_name?: string | null;
+  full_name?: string | null;
+}) {
+  const shop = input.shop_name?.trim();
+  if (shop) return shop;
+  const name = input.full_name?.trim();
+  if (name) return name;
+  return input.kind === "official" ? "Mas'ud El-Tamamy" : "Mitra terverifikasi";
 }
 
 /** URL profil publik penjual. */
