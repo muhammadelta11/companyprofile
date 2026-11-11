@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { SITE, waLink } from "@/data/site";
 import { getCurrentUser } from "@/lib/auth";
 import { buildDeltaContext, buildDeltaSystemPrompt } from "@/lib/delta/context";
-import { askGemini, geminiReady, type DeltaHistoryItem } from "@/lib/delta/gemini";
+import { askDeltaLlm, llmReady, type DeltaHistoryItem } from "@/lib/delta/llm";
 import { publicClient } from "@/lib/supabase/public";
 import { supabaseReady } from "@/lib/supabase/env";
 import { isHoneypot, isRateLimited, isTooFast } from "@/lib/spam";
@@ -69,19 +69,20 @@ export async function POST(req: Request) {
   ]);
 
   let reply: string | null = null;
-  let mode: "gemini" | "faq" = "faq";
+  let mode: "groq" | "gemini" | "faq" = "faq";
   let confidence: "high" | "low" = built.score >= 2 ? "high" : "low";
 
-  if (geminiReady()) {
+  if (llmReady()) {
     try {
-      reply = await askGemini({
+      const ai = await askDeltaLlm({
         system: buildDeltaSystemPrompt(user),
         context: built.context,
         message,
         history,
       });
-      if (reply) {
-        mode = "gemini";
+      if (ai?.text) {
+        reply = ai.text;
+        mode = ai.provider;
         confidence = "high";
       }
     } catch {
