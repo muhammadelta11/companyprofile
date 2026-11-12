@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ProductItem } from "@/lib/product";
 import { matchesQuery } from "@/lib/catalog-search";
-import { sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
+import { isOwnMarketListing, sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
 import { CatalogSearch } from "@/components/CatalogSearch";
 import { ProductChatLink } from "@/components/market/ProductChatLink";
 import { OrderLink } from "@/components/OrderLink";
@@ -91,10 +91,15 @@ function matchesCategory(p: ProductItem, category: string) {
 export function MarketCatalog({
   products,
   canChat = false,
+  viewerId = null,
+  viewerRole = null,
 }: {
   products: ProductItem[];
   /** Sudah login & tidak suspended → chat langsung; kalau false tombol Chat wajib masuk. */
   canChat?: boolean;
+  /** Sembunyikan Chat di produk milik sendiri. */
+  viewerId?: string | null;
+  viewerRole?: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
@@ -255,11 +260,16 @@ export function MarketCatalog({
               <div className="mk-card__foot">
                 <strong>{p.price_label ?? "Hubungi WA"}</strong>
                 <div className="mk-card__actions">
-                  <ProductChatLink
-                    productId={p.id}
-                    loggedIn={canChat}
-                    className="btn btn-outline mk-card__chat"
-                  />
+                  {!isOwnMarketListing(
+                    viewerId ? { id: viewerId, role: viewerRole ?? undefined } : null,
+                    p
+                  ) ? (
+                    <ProductChatLink
+                      productId={p.id}
+                      loggedIn={canChat}
+                      className="btn btn-outline mk-card__chat"
+                    />
+                  ) : null}
                   <OrderLink
                     className="btn btn-teal mk-card__buy"
                     productId={p.id}

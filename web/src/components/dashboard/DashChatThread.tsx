@@ -91,9 +91,14 @@ export function DashChatThread({
           <strong>{productTitle}</strong>
           <p>{buyerLabel}</p>
         </div>
-        <Link className="btn btn-outline btn-sm" href={`/market/${productId}`}>
-          Lihat produk
-        </Link>
+        <div className="dash-chat__pane-actions">
+          <Link className="btn btn-outline btn-sm" href={`/market/${productId}/chat`}>
+            Buka chat
+          </Link>
+          <Link className="btn btn-outline btn-sm" href={`/market/${productId}`}>
+            Lihat produk
+          </Link>
+        </div>
       </header>
       <div className="dash-chat__messages" ref={listRef}>
         {messages.length ? (

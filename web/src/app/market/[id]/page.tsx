@@ -7,7 +7,6 @@ import { ItemGallery } from "@/components/ItemGallery";
 import { JsonLd } from "@/components/JsonLd";
 import { mergeGallery } from "@/lib/gallery";
 import { OrderLink } from "@/components/OrderLink";
-import { ProductChat } from "@/components/market/ProductChat";
 import { ProductChatLink } from "@/components/market/ProductChatLink";
 import { ProductComments } from "@/components/market/ProductComments";
 import { ProductViewBeacon } from "@/components/market/ProductViewBeacon";
@@ -19,15 +18,8 @@ import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
 import { ServiceAreaMap } from "@/components/market/ServiceAreaMap";
 import {
-  getBuyerThreadForProduct,
-  getSellerThreadsForProduct,
-  getThreadMessages,
-  isProductSeller,
-  type ProductChatMessage,
-  type ProductChatThread,
-} from "@/lib/product-chat";
-import {
   hasMapArea,
+  isOwnMarketListing,
   sellerHref,
   sellerInitials,
   sellerLabel,
@@ -42,7 +34,6 @@ import {
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ chat?: string }>;
 };
 
 export async function generateMetadata({ params }: Props) {
@@ -80,17 +71,16 @@ function DetailFallback() {
   );
 }
 
-export default function MarketDetailPage({ params, searchParams }: Props) {
+export default function MarketDetailPage({ params }: Props) {
   return (
     <Suspense fallback={<DetailFallback />}>
-      <MarketDetail params={params} searchParams={searchParams} />
+      <MarketDetail params={params} />
     </Suspense>
   );
 }
 
-async function MarketDetail({ params, searchParams }: Props) {
+async function MarketDetail({ params }: Props) {
   const { id } = await params;
-  const { chat: chatParam } = await searchParams;
   const product = await getProduct(id);
   if (!product) notFound();
 
@@ -118,28 +108,8 @@ async function MarketDetail({ params, searchParams }: Props) {
   ]);
 
   const canChat = Boolean(user && user.status !== "suspended");
-  const sellerView = Boolean(user && isProductSeller(user, product.owner_id));
-  let chatThread: ProductChatThread | null = null;
-  let chatMessages: ProductChatMessage[] = [];
-  let sellerThreads: ProductChatThread[] = [];
-
-  if (user && canChat) {
-    if (sellerView) {
-      sellerThreads = await getSellerThreadsForProduct(product.id);
-      const selected =
-        (chatParam && sellerThreads.find((t) => t.id === chatParam)) ||
-        sellerThreads[0] ||
-        null;
-      chatThread = selected;
-      if (selected) {
-        chatMessages = await getThreadMessages(selected.id, user.id);
-      }
-    } else {
-      const buyerChat = await getBuyerThreadForProduct(product.id, user.id);
-      chatThread = buyerChat.thread;
-      chatMessages = buyerChat.messages;
-    }
-  }
+  const ownListing = isOwnMarketListing(user, product);
+  const showChat = !ownListing;
   const fromSeller = product.owner_id
     ? all.filter((p) => p.owner_id === product.owner_id && p.id !== product.id)
     : all.filter((p) => !p.owner_id && p.id !== product.id);
@@ -244,15 +214,21 @@ async function MarketDetail({ params, searchParams }: Props) {
                 serviceArea={product.service_area}
                 kind={product.kind}
               >
-                Order via WhatsApp
+                Order via WA
               </OrderLink>
-              <ProductChatLink
-                productId={product.id}
-                loggedIn={canChat}
-                className="btn btn-outline"
-              >
-                Chat penjual
-              </ProductChatLink>
+              {showChat ? (
+                <ProductChatLink
+                  productId={product.id}
+                  loggedIn={canChat}
+                  className="btn btn-outline"
+                >
+                  Chat di app
+                </ProductChatLink>
+              ) : (
+                <Link className="btn btn-outline" href="/dashboard/chat">
+                  Inbox chat
+                </Link>
+              )}
               <Link className="btn btn-outline" href="/market">
                 Kembali
               </Link>
@@ -318,11 +294,13 @@ async function MarketDetail({ params, searchParams }: Props) {
                     <div className="mk-card__foot">
                       <strong>{p.price_label ?? "Hubungi WA"}</strong>
                       <div className="mk-card__actions">
-                        <ProductChatLink
-                          productId={p.id}
-                          loggedIn={canChat}
-                          className="btn btn-outline mk-card__chat"
-                        />
+                        {!isOwnMarketListing(user, p) ? (
+                          <ProductChatLink
+                            productId={p.id}
+                            loggedIn={canChat}
+                            className="btn btn-outline mk-card__chat"
+                          />
+                        ) : null}
                         <OrderLink
                           className="btn btn-teal mk-card__buy"
                           productId={p.id}
@@ -343,17 +321,36 @@ async function MarketDetail({ params, searchParams }: Props) {
           </section>
         ) : null}
 
-        <ProductChat
-          productId={product.id}
-          productTitle={product.title}
-          canChat={canChat}
-          isSellerView={sellerView}
-          userId={user?.id}
-          userName={user?.name}
-          thread={chatThread}
-          messages={chatMessages}
-          sellerThreads={sellerThreads}
-        />
+        {showChat ? (
+          <section className="detail__chat-cta" aria-label="Chat penjual">
+            <div>
+              <h2>Chat di app</h2>
+              <p>
+                Seperti chat marketplace: kirim pesan langsung ke penjual di app (realtime).
+                Order via WA tetap terpisah di tombol Order.
+              </p>
+            </div>
+            <ProductChatLink
+              productId={product.id}
+              loggedIn={canChat}
+              className="btn btn-teal"
+            >
+              Buka chat
+            </ProductChatLink>
+          </section>
+        ) : (
+          <section className="detail__chat-cta" aria-label="Inbox chat penjual">
+            <div>
+              <h2>Ini produk kamu</h2>
+              <p>
+                Pembeli menghubungi lewat chat di item ini. Balas dari inbox dashboard.
+              </p>
+            </div>
+            <Link className="btn btn-teal" href="/dashboard/chat">
+              Buka inbox chat
+            </Link>
+          </section>
+        )}
 
         <ProductComments
           productId={product.id}

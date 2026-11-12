@@ -29,6 +29,15 @@ export function isProductSeller(user: CurrentUser, productOwnerId: string | null
   return false;
 }
 
+/**
+ * Mode UI chat: inbox penjual hanya untuk pemilik listing.
+ * Admin/member di produk mitra lain = mode pembeli (bisa kirim pesan ke penjual).
+ */
+export function isChatSellerInbox(user: CurrentUser, productOwnerId: string | null) {
+  if (productOwnerId) return productOwnerId === user.id;
+  return user.role === "admin";
+}
+
 export async function getBuyerThreadForProduct(
   productId: string,
   userId: string

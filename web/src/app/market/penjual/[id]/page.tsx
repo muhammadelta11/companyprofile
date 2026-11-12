@@ -210,7 +210,12 @@ async function PenjualDetail({ params }: Props) {
           </div>
 
           {products.length ? (
-            <MarketCatalog products={products} canChat={canChat} />
+            <MarketCatalog
+              products={products}
+              canChat={canChat}
+              viewerId={user?.id ?? null}
+              viewerRole={user?.role ?? null}
+            />
           ) : (
             <p className="mk-store__empty">Belum ada produk tayang dari etalase ini.</p>
           )}

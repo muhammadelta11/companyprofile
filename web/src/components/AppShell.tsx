@@ -12,6 +12,10 @@ import { IntroContext } from "./intro/intro-context";
 const DeltaPanel = dynamic(() => import("./DeltaPanel").then((m) => m.DeltaPanel), {
   ssr: false,
 });
+const SellerChatPanel = dynamic(
+  () => import("./market/SellerChatPanel").then((m) => m.SellerChatPanel),
+  { ssr: false }
+);
 const InstallBanner = dynamic(() => import("./pwa/InstallBanner").then((m) => m.InstallBanner), {
   ssr: false,
 });
@@ -99,6 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </button>
       <InstallBanner />
       <DeltaPanel open={deltaOpen} onClose={closeDelta} />
+      <SellerChatPanel />
     </IntroContext.Provider>
   );
 }

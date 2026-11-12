@@ -4,7 +4,7 @@ import { updateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { publicClient } from "@/lib/supabase/public";
 import { supabaseReady } from "@/lib/supabase/env";
-import { isUuid } from "@/lib/content";
+import { getProduct, isUuid } from "@/lib/content";
 import { isHoneypot, isRateLimited, isTooFast } from "@/lib/spam";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { waLink, waTo } from "@/data/site";
@@ -185,6 +185,86 @@ export async function postProductComment(input: {
   }
   updateTag(`product-comments-${input.productId}`);
   return { ok: true };
+}
+
+/** Bootstrap ruang chat produk untuk panel overlay (ala Delta). */
+export async function loadProductChatRoom(productId: string): Promise<{
+  error?: string;
+  needLogin?: boolean;
+  productId?: string;
+  productTitle?: string;
+  productHref?: string;
+  productImage?: string | null;
+  sellerName?: string;
+  canChat?: boolean;
+  isSellerView?: boolean;
+  userId?: string;
+  userName?: string;
+  thread?: import("@/lib/product-chat").ProductChatThread | null;
+  messages?: import("@/lib/product-chat").ProductChatMessage[];
+  sellerThreads?: import("@/lib/product-chat").ProductChatThread[];
+}> {
+  if (!supabaseReady) return { error: "Database belum terhubung." };
+  if (!isUuid(productId)) return { error: "Produk tidak valid." };
+
+  const [product, user] = await Promise.all([getProduct(productId), getCurrentUser()]);
+  if (!product) return { error: "Produk tidak ditemukan atau belum tayang." };
+  if (!user || user.status === "suspended") {
+    return { needLogin: true, productId: product.id, productTitle: product.title };
+  }
+
+  const {
+    getBuyerThreadForProduct,
+    getSellerThreadsForProduct,
+    getThreadMessages,
+    isChatSellerInbox,
+  } = await import("@/lib/product-chat");
+  const { sellerLabel } = await import("@/lib/product");
+
+  // Admin di produk mitra = pembeli (bisa chat penjual). Inbox hanya jika milik sendiri.
+  const isSellerView = isChatSellerInbox(user, product.owner_id);
+  let thread = null as import("@/lib/product-chat").ProductChatThread | null;
+  let messages: import("@/lib/product-chat").ProductChatMessage[] = [];
+  let sellerThreads: import("@/lib/product-chat").ProductChatThread[] = [];
+
+  if (isSellerView) {
+    sellerThreads = await getSellerThreadsForProduct(product.id);
+    thread = sellerThreads[0] ?? null;
+    if (thread) messages = await getThreadMessages(thread.id, user.id);
+  } else {
+    const buyer = await getBuyerThreadForProduct(product.id, user.id);
+    thread = buyer.thread;
+    messages = buyer.messages;
+  }
+
+  return {
+    productId: product.id,
+    productTitle: product.title,
+    productHref: `/market/${product.id}`,
+    productImage: product.image_url,
+    sellerName: sellerLabel(product),
+    canChat: true,
+    isSellerView,
+    userId: user.id,
+    userName: user.name,
+    thread,
+    messages,
+    sellerThreads,
+  };
+}
+
+/** Ambil pesan satu thread (ganti percakapan di panel). */
+export async function fetchProductThreadMessages(threadId: string): Promise<{
+  error?: string;
+  messages?: import("@/lib/product-chat").ProductChatMessage[];
+}> {
+  if (!supabaseReady) return { error: "Database belum terhubung." };
+  if (!isUuid(threadId)) return { error: "Percakapan tidak valid." };
+  const user = await getCurrentUser();
+  if (!user) return { error: "Masuk dulu." };
+  const { getThreadMessages } = await import("@/lib/product-chat");
+  const messages = await getThreadMessages(threadId, user.id);
+  return { messages };
 }
 
 /** Chat privat per produk — wajib login, tersimpan di product_threads / product_messages. */

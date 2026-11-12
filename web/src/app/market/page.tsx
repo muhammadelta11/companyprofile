@@ -69,7 +69,12 @@ async function MarketContent() {
             text="Belanja produk official & mitra di Market Mas'ud El-Tamamy"
           />
         </div>
-        <MarketCatalog products={products} canChat={canChat} />
+        <MarketCatalog
+          products={products}
+          canChat={canChat}
+          viewerId={user?.id ?? null}
+          viewerRole={user?.role ?? null}
+        />
 
         <div className="apage-cta">
           <div>

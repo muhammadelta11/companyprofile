@@ -38,6 +38,16 @@ export const SHIPPING_OPTIONS: { value: ShippingMode; label: string }[] = [
   { value: "digital", label: "Digital / kirim online" },
 ];
 
+/** Listing milik viewer: mitra = owner_id; official (tanpa owner) = admin. */
+export function isOwnMarketListing(
+  viewer: { id: string; role?: string } | null | undefined,
+  product: { owner_id?: string | null }
+) {
+  if (!viewer?.id) return false;
+  if (product.owner_id) return product.owner_id === viewer.id;
+  return viewer.role === "admin";
+}
+
 export function shippingLabel(
   mode?: ShippingMode | null,
   area?: string | null,

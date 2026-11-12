@@ -39,8 +39,8 @@ export function loginHref(next?: string) {
   return `/masuk?next=${encodeURIComponent(target)}`;
 }
 
-/** Chat produk: sudah login → langsung ke chat; belum → wajib masuk dulu. */
+/** Chat produk: halaman chat realtime per item (bukan komentar). */
 export function productChatHref(productId: string, loggedIn: boolean) {
-  const next = `/market/${productId}#chat-produk`;
+  const next = `/market/${productId}/chat`;
   return loggedIn ? next : loginHref(next);
 }

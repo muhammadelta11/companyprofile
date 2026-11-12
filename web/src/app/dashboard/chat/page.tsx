@@ -43,7 +43,7 @@ async function Inbox({ searchParams }: Props) {
         text="Percakapan privat per produk — real-time. Pembeli mulai dari Market; balasan muncul langsung."
       />
       {!threads.length ? (
-        <Empty>Belum ada chat. Pembeli memulai dari detail produk di Market.</Empty>
+        <Empty>Belum ada chat. Pembeli memulai dari tombol Chat di Market (halaman chat per produk).</Empty>
       ) : (
         <div className="dash-chat">
           <aside className="dash-chat__list" aria-label="Daftar percakapan">
