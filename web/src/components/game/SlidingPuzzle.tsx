@@ -6,17 +6,21 @@ import { submitPuzzleScore } from "@/app/actions";
 import { loginHref } from "@/lib/access-policy";
 import { SITE, waLink } from "@/data/site";
 import {
-  PUZZLE_IMAGE,
+  PUZZLE_IMAGES,
+  PUZZLE_IMAGE_THEMES,
   PUZZLE_LEVELS,
   calcScore,
   calcStars,
   canMove,
   createSolved,
+  getPuzzleImage,
   getPuzzleLevel,
   isSolved,
   moveTile,
+  pickRandomPuzzleImage,
   shuffleSolvable,
   starsLabel,
+  type PuzzleImageTheme,
   type PuzzleLevelId,
   type PuzzleMode,
 } from "@/lib/puzzle";
@@ -65,6 +69,8 @@ type Phase = "pick" | "play" | "won";
 export function SlidingPuzzle({ canSave, userName, boards }: Props) {
   const [levelId, setLevelId] = useState<PuzzleLevelId>("mudah");
   const [mode, setMode] = useState<PuzzleMode>("gambar");
+  const [themeFilter, setThemeFilter] = useState<PuzzleImageTheme | "semua">("semua");
+  const [imageId, setImageId] = useState(() => pickRandomPuzzleImage().id);
   const [phase, setPhase] = useState<Phase>("pick");
   const [tiles, setTiles] = useState<number[]>(() => createSolved(3));
   const [moves, setMoves] = useState(0);
@@ -82,6 +88,14 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
   const [saving, setSaving] = useState(false);
   const tickRef = useRef<number | null>(null);
   const level = useMemo(() => getPuzzleLevel(levelId), [levelId]);
+  const puzzleImage = useMemo(() => getPuzzleImage(imageId), [imageId]);
+  const gallery = useMemo(
+    () =>
+      themeFilter === "semua"
+        ? PUZZLE_IMAGES
+        : PUZZLE_IMAGES.filter((img) => img.theme === themeFilter),
+    [themeFilter]
+  );
   const blank = level.size * level.size - 1;
 
   useEffect(() => {
@@ -100,21 +114,24 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
     };
   }, [phase]);
 
-  const start = useCallback(
-    (id: PuzzleLevelId) => {
-      const lv = getPuzzleLevel(id);
-      setLevelId(id);
-      setTiles(shuffleSolvable(lv.size));
-      setMoves(0);
-      setSeconds(0);
-      setResult(null);
-      setSaveMsg(null);
-      setHintLeft(id === "mudah" ? 1 : 0);
-      setShowHint(false);
-      setPhase("play");
-    },
-    []
-  );
+  const start = useCallback((id: PuzzleLevelId, nextImageId?: string) => {
+    const lv = getPuzzleLevel(id);
+    if (nextImageId) setImageId(nextImageId);
+    setLevelId(id);
+    setTiles(shuffleSolvable(lv.size));
+    setMoves(0);
+    setSeconds(0);
+    setResult(null);
+    setSaveMsg(null);
+    setHintLeft(id === "mudah" ? 1 : 0);
+    setShowHint(false);
+    setPhase("play");
+  }, []);
+
+  function shuffleImage() {
+    const next = pickRandomPuzzleImage(themeFilter);
+    setImageId(next.id);
+  }
 
   async function persistScore(payload: {
     moves: number;
@@ -228,6 +245,59 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
             </div>
           </div>
 
+          {mode === "gambar" ? (
+            <div className="pz-gallery">
+              <div className="pz-gallery__head">
+                <div>
+                  <span>Pilih gambar</span>
+                  <p>Pemandangan, bunga, atau yang lucu — biar mainnya lebih hiburan.</p>
+                </div>
+                <button type="button" className="btn btn-outline btn-sm" onClick={shuffleImage}>
+                  Acak gambar
+                </button>
+              </div>
+              <div className="pz-gallery__themes" role="tablist" aria-label="Tema gambar">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={themeFilter === "semua"}
+                  className={themeFilter === "semua" ? "is-active" : undefined}
+                  onClick={() => setThemeFilter("semua")}
+                >
+                  Semua
+                </button>
+                {PUZZLE_IMAGE_THEMES.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={themeFilter === t.id}
+                    className={themeFilter === t.id ? "is-active" : undefined}
+                    onClick={() => setThemeFilter(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="pz-gallery__grid">
+                {gallery.map((img) => (
+                  <button
+                    key={img.id}
+                    type="button"
+                    className={`pz-gallery__item${imageId === img.id ? " is-active" : ""}`}
+                    onClick={() => setImageId(img.id)}
+                    aria-pressed={imageId === img.id}
+                    title={img.label}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.src} alt={img.label} loading="lazy" />
+                    <span>{img.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="pz-levels">
             {PUZZLE_LEVELS.map((lv) => (
               <article key={lv.id} className="pz-level" style={{ "--pz-accent": lv.accent } as React.CSSProperties}>
@@ -286,6 +356,16 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
               >
                 Acak ulang
               </button>
+              {mode === "gambar" ? (
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => start(levelId, pickRandomPuzzleImage(themeFilter).id)}
+                  disabled={phase === "won"}
+                >
+                  Ganti gambar
+                </button>
+              ) : null}
             </div>
           </div>
 
@@ -315,7 +395,7 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
                     style={
                       mode === "gambar"
                         ? {
-                            backgroundImage: `url(${PUZZLE_IMAGE})`,
+                            backgroundImage: `url(${puzzleImage.src})`,
                             backgroundSize: `${level.size * 100}% ${level.size * 100}%`,
                             backgroundPosition: `${(c / (level.size - 1)) * 100}% ${(r / (level.size - 1)) * 100}%`,
                           }
@@ -332,8 +412,10 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
               <aside className="pz-ref" aria-hidden={false}>
                 <p>Referensi</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={PUZZLE_IMAGE} alt="Gambar utuh sebagai referensi" />
-                <small>{level.title}</small>
+                <img src={puzzleImage.src} alt={`${puzzleImage.label} — referensi`} />
+                <small>
+                  {puzzleImage.label} · {level.title}
+                </small>
               </aside>
             ) : null}
           </div>
