@@ -427,7 +427,7 @@ export async function submitPuzzleScore(input: {
   score: number;
   badge?: string;
   mode?: string;
-}): Promise<{ error?: string; ok?: boolean }> {
+}): Promise<{ error?: string; ok?: boolean; rank?: number; total?: number }> {
   if (!supabaseReady) return { error: "Database belum terhubung." };
   if (await isRateLimited("puzzle-score", 20)) {
     return { error: "Terlalu cepat. Tunggu sebentar." };
@@ -465,5 +465,14 @@ export async function submitPuzzleScore(input: {
   if (error) {
     return { error: "Gagal menyimpan skor. Jalankan puzzle.sql di Supabase." };
   }
-  return { ok: true };
+
+  const { getPuzzleLeaderboard, rankAmongScores } = await import("@/lib/puzzle-scores");
+  const board = await getPuzzleLeaderboard(level as "mudah" | "sedang" | "sulit", 50);
+  const placed = rankAmongScores(board, {
+    score,
+    seconds,
+    moves,
+    user_id: user.id,
+  });
+  return { ok: true, rank: placed.rank, total: placed.total };
 }

@@ -63,3 +63,32 @@ export async function getPuzzleLeaderboard(
     .sort((a, b) => b.score - a.score || a.seconds - b.seconds || a.moves - b.moves)
     .slice(0, limit);
 }
+
+/** Bandingkan skor (lebih tinggi menang; seri → waktu/langkah lebih kecil). */
+export function scoreBeats(
+  a: { score: number; seconds: number; moves: number },
+  b: { score: number; seconds: number; moves: number }
+) {
+  if (a.score !== b.score) return a.score > b.score;
+  if (a.seconds !== b.seconds) return a.seconds < b.seconds;
+  return a.moves < b.moves;
+}
+
+/** Posisi skor di antara best mingguan (1-based). */
+export function rankAmongScores(
+  rows: Array<{ score: number; seconds: number; moves: number; user_id?: string }>,
+  attempt: { score: number; seconds: number; moves: number; user_id?: string | null }
+) {
+  const others = attempt.user_id
+    ? rows.filter((r) => r.user_id !== attempt.user_id)
+    : rows;
+  const better = others.filter((r) => scoreBeats(r, attempt)).length;
+  const alreadyListed = Boolean(
+    attempt.user_id && rows.some((r) => r.user_id === attempt.user_id)
+  );
+  return {
+    rank: better + 1,
+    total: others.length + 1,
+    alreadyListed,
+  };
+}

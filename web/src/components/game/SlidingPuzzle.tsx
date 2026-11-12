@@ -24,7 +24,11 @@ import {
   type PuzzleLevelId,
   type PuzzleMode,
 } from "@/lib/puzzle";
-import type { PuzzleScoreRow } from "@/lib/puzzle-scores";
+import {
+  rankAmongScores,
+  scoreBeats,
+  type PuzzleScoreRow,
+} from "@/lib/puzzle-scores";
 
 const STREAK_KEY = "puzzle-streak-v1";
 
@@ -83,9 +87,16 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
     score: number;
     badge: string;
     title: string;
+    rank: number;
+    total: number;
+    provisional: boolean;
   } | null>(null);
+  const [liveBoards, setLiveBoards] = useState(boards);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [shareHint, setShareHint] = useState<string | null>(null);
   const tickRef = useRef<number | null>(null);
   const level = useMemo(() => getPuzzleLevel(levelId), [levelId]);
   const puzzleImage = useMemo(() => getPuzzleImage(imageId), [imageId]);
@@ -97,10 +108,26 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
     [themeFilter]
   );
   const blank = level.size * level.size - 1;
+  const confettiBits = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        left: `${(i * 37) % 100}%`,
+        delay: `${(i % 10) * 0.05}s`,
+        duration: `${1.2 + (i % 6) * 0.15}s`,
+        color: ["#f59e0b", "#14b8a6", "#3b82f6", "#ef4444", "#a855f7", "#22c55e"][i % 6],
+        dx: `${((i % 7) - 3) * 18}px`,
+      })),
+    []
+  );
 
   useEffect(() => {
     setStreak(readStreak());
   }, []);
+
+  useEffect(() => {
+    setLiveBoards(boards);
+  }, [boards]);
 
   useEffect(() => {
     if (phase !== "play") {
@@ -123,6 +150,8 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
     setSeconds(0);
     setResult(null);
     setSaveMsg(null);
+    setShareHint(null);
+    setCelebrate(false);
     setHintLeft(id === "mudah" ? 1 : 0);
     setShowHint(false);
     setPhase("play");
@@ -141,7 +170,7 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
     badge: string;
   }) {
     if (!canSave) {
-      setSaveMsg("Mode tamu: skor tidak disimpan. Masuk agar masuk ranking.");
+      setSaveMsg("Mode tamu: skor tidak disimpan. Masuk agar masuk ranking resmi.");
       return;
     }
     setSaving(true);
@@ -157,8 +186,47 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
       mode,
     });
     setSaving(false);
-    if (res.error) setSaveMsg(res.error);
-    else setSaveMsg("Skor tersimpan di papan peringkat mingguan.");
+    if (res.error) {
+      setSaveMsg(res.error);
+      return;
+    }
+    if (res.rank && res.total) {
+      setResult((prev) =>
+        prev
+          ? { ...prev, rank: res.rank!, total: res.total!, provisional: false }
+          : prev
+      );
+      setSaveMsg(`Tersimpan · kamu di peringkat #${res.rank} dari ${res.total} minggu ini.`);
+    } else {
+      setSaveMsg("Skor tersimpan di papan peringkat mingguan.");
+    }
+    const meName = (userName || "Kamu").slice(0, 80);
+    setLiveBoards((prev) => {
+      const list = prev[levelId] ?? [];
+      const mine: PuzzleScoreRow = {
+        id: `local-${Date.now()}`,
+        user_id: "me",
+        player_name: meName,
+        level: levelId,
+        size: level.size,
+        moves: payload.moves,
+        seconds: payload.seconds,
+        stars: payload.stars,
+        score: payload.score,
+        badge: payload.badge,
+        mode,
+        created_at: new Date().toISOString(),
+      };
+      const withoutMe = list.filter(
+        (r) => r.player_name.toLowerCase() !== meName.toLowerCase() && r.user_id !== "me"
+      );
+      const next = [...withoutMe, mine]
+        .sort((a, b) =>
+          scoreBeats(a, b) ? -1 : scoreBeats(b, a) ? 1 : 0
+        )
+        .slice(0, 10);
+      return { ...prev, [levelId]: next };
+    });
   }
 
   function onTile(index: number) {
@@ -180,14 +248,24 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
         stars,
         streakDays: streakNow,
       });
+      const placed = rankAmongScores(liveBoards[levelId] ?? [], {
+        score,
+        seconds: finalSeconds,
+        moves: finalMoves,
+      });
       setMoves(finalMoves);
       setResult({
         stars,
         score,
         badge: level.badge,
         title: level.title,
+        rank: placed.rank,
+        total: placed.total,
+        provisional: true,
       });
+      setCelebrate(true);
       setPhase("won");
+      window.setTimeout(() => setCelebrate(false), 1700);
       void persistScore({
         moves: finalMoves,
         seconds: finalSeconds,
@@ -196,6 +274,131 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
         badge: level.badge,
       });
       return;
+    }
+  }
+
+  function shareText(score: number, stars: number) {
+    const rankLine =
+      result?.rank != null
+        ? `Peringkat #${result.rank} dari ${result.total} (minggu ini)`
+        : null;
+    return [
+      `Selesai Puzzle ${level.label} ${starsLabel(stars)}`,
+      `Skor ${score} · ${moves} langkah · ${formatTime(seconds)}`,
+      rankLine,
+      mode === "gambar" ? `Gambar: ${puzzleImage.label}` : "Mode angka",
+      `Main juga di https://${SITE.domain}/game`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  async function makeShareCard(score: number, stars: number) {
+    const size = 1080;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas tidak tersedia.");
+
+    const grad = ctx.createLinearGradient(0, 0, size, size);
+    grad.addColorStop(0, "#0f766e");
+    grad.addColorStop(0.55, "#1d4ed8");
+    grad.addColorStop(1, "#b45309");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+
+    const frame = 72;
+    ctx.fillStyle = "rgba(255,255,255,0.12)";
+    ctx.fillRect(frame - 18, frame - 18, size - (frame - 18) * 2, size - (frame - 18) * 2);
+
+    if (mode === "gambar") {
+      const img = await loadImage(puzzleImage.src);
+      ctx.save();
+      roundRect(ctx, frame, frame, size - frame * 2, size - frame * 2, 28);
+      ctx.clip();
+      ctx.drawImage(img, frame, frame, size - frame * 2, size - frame * 2);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "#f8fafc";
+      roundRect(ctx, frame, frame, size - frame * 2, size - frame * 2, 28);
+      ctx.fill();
+      ctx.fillStyle = "#0f766e";
+      ctx.font = "bold 120px system-ui, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText(`${level.size}×${level.size}`, size / 2, size / 2 + 40);
+    }
+
+    ctx.fillStyle = "rgba(15, 23, 42, 0.72)";
+    roundRect(ctx, 70, size - 290, size - 140, 200, 28);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "left";
+    ctx.font = "bold 42px system-ui, sans-serif";
+    ctx.fillText("Puzzle selesai!", 110, size - 220);
+    ctx.font = "600 36px system-ui, sans-serif";
+    ctx.fillText(`${level.title} · ${starsLabel(stars)}`, 110, size - 165);
+    ctx.font = "500 30px system-ui, sans-serif";
+    const rankBit =
+      result?.rank != null ? ` · #${result.rank}/${result.total}` : "";
+    ctx.fillText(
+      `Skor ${score} · ${moves} langkah · ${formatTime(seconds)}${rankBit}`,
+      110,
+      size - 118
+    );
+    ctx.font = "600 28px system-ui, sans-serif";
+    ctx.fillText(SITE.domain + "/game", 110, size - 72);
+
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Gagal buat gambar."))), "image/jpeg", 0.92);
+    });
+  }
+
+  async function shareStoryWa() {
+    if (!result) return;
+    setShareBusy(true);
+    setShareHint(null);
+    const text = shareText(result.score, result.stars);
+    try {
+      const blob = await makeShareCard(result.score, result.stars);
+      const file = new File([blob], "puzzle-selesai.jpg", { type: "image/jpeg" });
+      const nav = navigator as Navigator & {
+        canShare?: (data?: ShareData) => boolean;
+        share?: (data: ShareData) => Promise<void>;
+      };
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({
+          files: [file],
+          title: "Puzzle selesai!",
+          text,
+        });
+        setShareHint("Pilih WhatsApp → Status untuk story.");
+      } else if (nav.share) {
+        await nav.share({ title: "Puzzle selesai!", text, url: `https://${SITE.domain}/game` });
+        setShareHint("Teks dibagikan. Di WA pilih Status bila tersedia.");
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "puzzle-selesai.jpg";
+        a.click();
+        URL.revokeObjectURL(url);
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch {
+          /* ignore */
+        }
+        setShareHint("Gambar diunduh + teks disalin. Unggah ke Status WA.");
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        setShareHint(null);
+      } else {
+        window.open(waLink(text), "_blank", "noopener,noreferrer");
+        setShareHint("Dibuka di chat WA. Tempel ke Status bila mau.");
+      }
+    } finally {
+      setShareBusy(false);
     }
   }
 
@@ -321,7 +524,7 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
             ))}
           </div>
 
-          <Leaderboards boards={boards} />
+          <Leaderboards boards={liveBoards} />
         </section>
       ) : null}
 
@@ -371,7 +574,7 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
 
           <div className="pz-play__stage">
             <div
-              className={`pz-board pz-board--${mode}${showHint ? " is-hint" : ""}`}
+              className={`pz-board pz-board--${mode}${showHint ? " is-hint" : ""}${phase === "won" ? " is-solved" : ""}`}
               style={boardStyle}
               role="grid"
               aria-label={`Puzzle ${level.size} kali ${level.size}`}
@@ -406,6 +609,36 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
                   </button>
                 );
               })}
+              {mode === "gambar" ? (
+                <div
+                  className="pz-board__complete"
+                  style={{ backgroundImage: `url(${puzzleImage.src})` }}
+                  aria-hidden="true"
+                />
+              ) : null}
+              {celebrate ? (
+                <>
+                  <div className="pz-board__burst" aria-live="polite">
+                    <strong>Berhasil!</strong>
+                  </div>
+                  <div className="pz-confetti" aria-hidden="true">
+                    {confettiBits.map((bit) => (
+                      <i
+                        key={bit.id}
+                        style={
+                          {
+                            left: bit.left,
+                            background: bit.color,
+                            animationDelay: bit.delay,
+                            animationDuration: bit.duration,
+                            "--dx": bit.dx,
+                          } as React.CSSProperties
+                        }
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
 
             {mode === "gambar" ? (
@@ -422,39 +655,73 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
 
           {phase === "won" && result ? (
             <div className="pz-win">
-              <p className="pz-win__eyebrow">Selesai</p>
-              <h2>
-                {result.title} · {starsLabel(result.stars)}
-              </h2>
+              <p className="pz-win__eyebrow">Kejutan selesai</p>
+              <div className="pz-win__stars" aria-label={`${result.stars} bintang`}>
+                {starsLabel(result.stars)}
+              </div>
+              <h2>{result.title}</h2>
               <p>
                 Skor <strong>{result.score}</strong> · {moves} langkah · {formatTime(seconds)}
                 {streak > 1 ? ` · streak ${streak} hari` : ""}
               </p>
+
+              <div className="pz-win__rank" aria-live="polite">
+                <strong>#{result.rank}</strong>
+                <div>
+                  <span>
+                    {result.provisional && canSave ? "Memperbarui ranking…" : "Peringkat minggu ini"}
+                  </span>
+                  <small>
+                    dari {result.total} pemain · level {level.label}
+                    {!canSave ? " (perkiraan — belum tersimpan)" : ""}
+                  </small>
+                </div>
+              </div>
+
+              <WinRankList
+                rows={liveBoards[levelId] ?? []}
+                me={{
+                  name: userName || "Kamu",
+                  score: result.score,
+                  seconds,
+                  moves,
+                  stars: result.stars,
+                  rank: result.rank,
+                }}
+              />
+
               <ul className="pz-win__perks">
                 {level.perks.map((p) => (
                   <li key={p}>{p}</li>
                 ))}
               </ul>
               <div className="pz-win__actions">
+                <button
+                  type="button"
+                  className="btn btn-teal"
+                  onClick={() => void shareStoryWa()}
+                  disabled={shareBusy}
+                >
+                  {shareBusy ? "Menyiapkan…" : "Share Story WA"}
+                </button>
+                <a
+                  className="btn btn-outline"
+                  href={waLink(shareText(result.score, result.stars))}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Chat WA
+                </a>
                 {!canSave ? (
-                  <Link className="btn btn-teal" href={loginHref("/game")}>
+                  <Link className="btn btn-outline" href={loginHref("/game")}>
                     Masuk agar skor tersimpan
                   </Link>
                 ) : null}
                 <button type="button" className="btn btn-outline" onClick={() => start(levelId)}>
                   Main lagi
                 </button>
-                <a
-                  className="btn btn-outline"
-                  href={waLink(
-                    `Aku dapat ${result.score} poin di Puzzle ${level.label} (${SITE.domain}/game). Coba kalahkan!`
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Bagikan WA
-                </a>
               </div>
+              {shareHint ? <p className="pz-win__hint">{shareHint}</p> : null}
               {saveMsg ? (
                 <p className={`pz-win__msg${canSave ? "" : " is-guest"}`}>
                   {saving ? "Menyimpan skor…" : saveMsg}
@@ -462,18 +729,99 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
               ) : null}
             </div>
           ) : null}
+
+          {phase === "won" ? (
+            <Leaderboards boards={liveBoards} focusLevel={levelId} highlightName={userName} />
+          ) : null}
         </section>
       ) : null}
     </div>
   );
 }
 
-function Leaderboards({ boards }: { boards: Record<PuzzleLevelId, PuzzleScoreRow[]> }) {
+function WinRankList({
+  rows,
+  me,
+}: {
+  rows: PuzzleScoreRow[];
+  me: {
+    name: string;
+    score: number;
+    seconds: number;
+    moves: number;
+    stars: number;
+    rank: number;
+  };
+}) {
+  const entries = useMemo(() => {
+    const others = rows.filter(
+      (r) => r.player_name.toLowerCase() !== me.name.toLowerCase() && r.user_id !== "me"
+    );
+    const mine: PuzzleScoreRow = {
+      id: "me-now",
+      user_id: "me",
+      player_name: me.name || "Kamu",
+      level: "mudah",
+      size: 3,
+      moves: me.moves,
+      seconds: me.seconds,
+      stars: me.stars,
+      score: me.score,
+      badge: null,
+      mode: "gambar",
+      created_at: "",
+    };
+    const ranked = [...others, mine]
+      .sort((a, b) => (scoreBeats(a, b) ? -1 : scoreBeats(b, a) ? 1 : 0))
+      .map((row, i) => ({ row, rank: i + 1 }));
+    const top = ranked.slice(0, 5);
+    const meEntry = ranked.find((x) => x.row.user_id === "me");
+    if (meEntry && !top.some((x) => x.row.user_id === "me")) {
+      return [...top.slice(0, 4), meEntry];
+    }
+    return top;
+  }, [rows, me]);
+
+  return (
+    <ol className="pz-win__board" aria-label="Cuplikan ranking">
+      {entries.map(({ row, rank }) => {
+        const isMe = row.user_id === "me";
+        return (
+          <li key={row.id} className={isMe ? "is-me" : undefined}>
+            <span>#{isMe ? me.rank : rank}</span>
+            <div>
+              <strong>{isMe ? `${row.player_name} (kamu)` : row.player_name}</strong>
+              <small>
+                {starsLabel(row.stars)} · {row.moves} langkah · {formatTime(row.seconds)}
+              </small>
+            </div>
+            <em>{row.score}</em>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Leaderboards({
+  boards,
+  focusLevel,
+  highlightName,
+}: {
+  boards: Record<PuzzleLevelId, PuzzleScoreRow[]>;
+  focusLevel?: PuzzleLevelId;
+  highlightName?: string | null;
+}) {
+  const levels = focusLevel
+    ? PUZZLE_LEVELS.filter((lv) => lv.id === focusLevel)
+    : PUZZLE_LEVELS;
+  const me = (highlightName || "").trim().toLowerCase();
+
   return (
     <section className="pz-boards" aria-label="Papan peringkat mingguan">
-      <h2>Ranking minggu ini</h2>
-      <div className="pz-boards__grid">
-        {PUZZLE_LEVELS.map((lv) => (
+      <h2>{focusLevel ? "Ranking level ini" : "Ranking minggu ini"}</h2>
+      <div className={`pz-boards__grid${focusLevel ? " is-focus" : ""}`}>
+        {levels.map((lv) => (
           <div key={lv.id} className="pz-board-card">
             <header>
               <strong>{lv.label}</strong>
@@ -481,18 +829,24 @@ function Leaderboards({ boards }: { boards: Record<PuzzleLevelId, PuzzleScoreRow
             </header>
             {boards[lv.id]?.length ? (
               <ol>
-                {boards[lv.id].map((row, i) => (
-                  <li key={row.id}>
-                    <span className="pz-board-card__rank">{i + 1}</span>
-                    <div>
-                      <strong>{row.player_name}</strong>
-                      <small>
-                        {starsLabel(row.stars)} · {row.moves} langkah · {formatTime(row.seconds)}
-                      </small>
-                    </div>
-                    <em>{row.score}</em>
-                  </li>
-                ))}
+                {boards[lv.id].map((row, i) => {
+                  const mine = me && row.player_name.toLowerCase() === me;
+                  return (
+                    <li key={row.id} className={mine ? "is-me" : undefined}>
+                      <span className="pz-board-card__rank">{i + 1}</span>
+                      <div>
+                        <strong>
+                          {row.player_name}
+                          {mine ? " (kamu)" : ""}
+                        </strong>
+                        <small>
+                          {starsLabel(row.stars)} · {row.moves} langkah · {formatTime(row.seconds)}
+                        </small>
+                      </div>
+                      <em>{row.score}</em>
+                    </li>
+                  );
+                })}
               </ol>
             ) : (
               <p className="pz-board-card__empty">Belum ada skor. Jadilah yang pertama.</p>
@@ -508,4 +862,32 @@ function formatTime(total: number) {
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Gambar gagal dimuat."));
+    img.src = src;
+  });
+}
+
+function roundRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const radius = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + w, y, x + w, y + h, radius);
+  ctx.arcTo(x + w, y + h, x, y + h, radius);
+  ctx.arcTo(x, y + h, x, y, radius);
+  ctx.arcTo(x, y, x + w, y, radius);
+  ctx.closePath();
 }
