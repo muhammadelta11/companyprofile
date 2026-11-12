@@ -22,7 +22,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "sharp": "^0.35.5",
-    "tinymce": "^8.10.1"
+    "tinymce": "^8.10.1",
+    "web-push": "^4.0.0"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -30,6 +31,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
+import { getChatUnreadTotal } from "@/lib/product-chat";
 import { DashNav } from "./DashNav";
 
 export const metadata = { title: "Dashboard" };
@@ -24,12 +25,14 @@ async function DashSide() {
     (user.role === "mitra" || user.role === "admin") && user.shop_name.trim()
       ? user.shop_name.trim()
       : user.name;
+  const chatUnread = await getChatUnreadTotal(user);
   return (
     <DashNav
       name={displayName}
       role={user.role}
       city={user.city || null}
       storeHref={user.role === "mitra" ? `/market/penjual/${user.id}` : null}
+      chatUnread={chatUnread}
     />
   );
 }

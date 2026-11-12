@@ -7,6 +7,7 @@ import {
   type ProductChatMessage,
   type ProductChatThread,
 } from "@/lib/product-chat";
+import { ChatReadMarker } from "@/components/dashboard/ChatReadMarker";
 import { DashChatThread } from "@/components/dashboard/DashChatThread";
 import { DashHead, DashLoading, Empty, formatDate } from "../ui";
 
@@ -38,12 +39,9 @@ async function Inbox({ searchParams }: Props) {
 
   return (
     <>
-      <DashHead
-        title="Chat"
-        text="Percakapan privat per produk — real-time. Pembeli mulai dari Market; balasan muncul langsung."
-      />
+      <DashHead title="Chat" text="Pesan masuk dari Market — realtime." />
       {!threads.length ? (
-        <Empty>Belum ada chat. Pembeli memulai dari tombol Chat di Market (halaman chat per produk).</Empty>
+        <Empty>Belum ada chat. Pembeli memulai dari tombol Chat di Market.</Empty>
       ) : (
         <div className="dash-chat">
           <aside className="dash-chat__list" aria-label="Daftar percakapan">
@@ -53,15 +51,18 @@ async function Inbox({ searchParams }: Props) {
           </aside>
           <section className="dash-chat__pane">
             {active ? (
-              <DashChatThread
-                key={active.id}
-                productId={active.product_id}
-                productTitle={active.product_title || "Produk"}
-                threadId={active.id}
-                userId={user.id}
-                buyerLabel={buyerLabel}
-                initialMessages={messages}
-              />
+              <>
+                <ChatReadMarker threadId={active.id} />
+                <DashChatThread
+                  key={active.id}
+                  productId={active.product_id}
+                  productTitle={active.product_title || "Produk"}
+                  threadId={active.id}
+                  userId={user.id}
+                  buyerLabel={buyerLabel}
+                  initialMessages={messages}
+                />
+              </>
             ) : (
               <Empty>Pilih percakapan.</Empty>
             )}
@@ -80,12 +81,16 @@ function ThreadLink({
   activeId?: string;
 }) {
   const active = thread.id === activeId;
+  const unread = thread.unread ?? 0;
   return (
     <Link
       href={`/dashboard/chat?id=${thread.id}`}
-      className={`dash-chat__item${active ? " is-active" : ""}`}
+      className={`dash-chat__item${active ? " is-active" : ""}${unread > 0 ? " is-unread" : ""}`}
     >
-      <strong>{thread.product_title}</strong>
+      <strong>
+        {thread.product_title}
+        {unread > 0 ? <em>{unread > 9 ? "9+" : unread}</em> : null}
+      </strong>
       <span>{thread.buyer_name}</span>
       <p>{thread.preview || "—"}</p>
       <time>{formatDate(thread.last_message_at)}</time>

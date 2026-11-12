@@ -124,3 +124,5 @@ begin
   alter publication supabase_realtime add table public.product_threads;
 exception when duplicate_object then null;
 end $$;
+
+-- Unread + Web Push: jalankan juga product-chat-notify.sql (kolom unread + push_subscriptions).

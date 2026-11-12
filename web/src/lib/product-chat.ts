@@ -21,7 +21,21 @@ export type ProductChatThread = {
   product_title?: string;
   buyer_name?: string;
   preview?: string;
+  unread?: number;
 };
+
+const THREAD_COLS =
+  "id, product_id, buyer_id, seller_id, last_message_at, created_at, buyer_unread, seller_unread";
+
+function myUnreadForThread(
+  userId: string,
+  row: { buyer_id: unknown; buyer_unread?: unknown; seller_unread?: unknown }
+) {
+  const buyerId = String(row.buyer_id);
+  const buyerUnread = Number(row.buyer_unread ?? 0) || 0;
+  const sellerUnread = Number(row.seller_unread ?? 0) || 0;
+  return buyerId === userId ? buyerUnread : sellerUnread;
+}
 
 export function isProductSeller(user: CurrentUser, productOwnerId: string | null) {
   if (user.role === "admin") return true;
@@ -46,7 +60,7 @@ export async function getBuyerThreadForProduct(
   const supabase = await createClient();
   const { data: thread } = await supabase
     .from("product_threads")
-    .select("id, product_id, buyer_id, seller_id, last_message_at, created_at")
+    .select(THREAD_COLS)
     .eq("product_id", productId)
     .eq("buyer_id", userId)
     .maybeSingle();
@@ -61,6 +75,7 @@ export async function getBuyerThreadForProduct(
       seller_id: thread.seller_id ? String(thread.seller_id) : null,
       last_message_at: String(thread.last_message_at ?? ""),
       created_at: String(thread.created_at ?? ""),
+      unread: myUnreadForThread(userId, thread),
     },
     messages,
   };
@@ -74,7 +89,7 @@ export async function getSellerThreadsForProduct(
   const { data, error } = await supabase
     .from("product_threads")
     .select(
-      "id, product_id, buyer_id, seller_id, last_message_at, created_at, buyer:profiles!product_threads_buyer_id_fkey(full_name)"
+      `${THREAD_COLS}, buyer:profiles!product_threads_buyer_id_fkey(full_name)`
     )
     .eq("product_id", productId)
     .order("last_message_at", { ascending: false })
@@ -92,6 +107,7 @@ export async function getSellerThreadsForProduct(
       last_message_at: String(row.last_message_at ?? ""),
       created_at: String(row.created_at ?? ""),
       buyer_name: buyer?.full_name?.trim() || "Pembeli",
+      unread: Number(row.seller_unread ?? 0) || 0,
     };
   });
 }
@@ -134,7 +150,7 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
   let query = supabase
     .from("product_threads")
     .select(
-      "id, product_id, buyer_id, seller_id, last_message_at, created_at, product:products!product_threads_product_id_fkey(title), buyer:profiles!product_threads_buyer_id_fkey(full_name)"
+      `${THREAD_COLS}, product:products!product_threads_product_id_fkey(title), buyer:profiles!product_threads_buyer_id_fkey(full_name)`
     )
     .order("last_message_at", { ascending: false })
     .limit(60);
@@ -146,7 +162,24 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
   }
   // admin: RLS already limits; can see all via is_admin
 
-  const { data, error } = await query;
+  let { data, error } = await query;
+  // Fallback jika product-chat-notify.sql belum dijalankan (kolom unread belum ada).
+  if (error) {
+    let fallback = supabase
+      .from("product_threads")
+      .select(
+        "id, product_id, buyer_id, seller_id, last_message_at, created_at, product:products!product_threads_product_id_fkey(title), buyer:profiles!product_threads_buyer_id_fkey(full_name)"
+      )
+      .order("last_message_at", { ascending: false })
+      .limit(60);
+    if (user.role === "member") fallback = fallback.eq("buyer_id", user.id);
+    else if (user.role === "mitra") {
+      fallback = fallback.or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`);
+    }
+    const retry = await fallback;
+    data = retry.data as typeof data;
+    error = retry.error;
+  }
   if (error || !data) return [];
 
   const threads: ProductChatThread[] = data.map((row) => {
@@ -162,6 +195,7 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
       product_title: product?.title?.trim() || "Produk",
       buyer_name: buyer?.full_name?.trim() || "Pembeli",
       preview: "",
+      unread: myUnreadForThread(user.id, row),
     };
   });
 
@@ -178,4 +212,32 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
   }
 
   return threads;
+}
+
+/** Total pesan belum dibaca untuk badge navigasi / ikon PWA. */
+export async function getChatUnreadTotal(user: CurrentUser): Promise<number> {
+  if (!supabaseReady) return 0;
+  const threads = await getInboxThreads(user);
+  return threads.reduce((sum, t) => sum + (t.unread ?? 0), 0);
+}
+
+/** Tandai thread sudah dibaca untuk peran viewer (pembeli/penjual). */
+export async function markProductThreadRead(threadId: string, userId: string) {
+  if (!supabaseReady || !threadId || !userId) return { error: "invalid" as const };
+  const supabase = await createClient();
+  const { data: thread } = await supabase
+    .from("product_threads")
+    .select("id, buyer_id, seller_id")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (!thread) return { error: "not_found" as const };
+
+  const isBuyer = String(thread.buyer_id) === userId;
+  const patch = isBuyer
+    ? { buyer_unread: 0, buyer_last_read_at: new Date().toISOString() }
+    : { seller_unread: 0, seller_last_read_at: new Date().toISOString() };
+
+  const { error } = await supabase.from("product_threads").update(patch).eq("id", threadId);
+  if (error) return { error: "update_failed" as const };
+  return { ok: true as const };
 }

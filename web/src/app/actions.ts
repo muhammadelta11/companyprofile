@@ -372,12 +372,108 @@ export async function sendProductChatMessage(input: {
     return { error: "Gagal mengirim. Jalankan product-chat.sql atau coba lagi." };
   }
 
+  // Push ke lawan bicara (PWA Android / desktop).
+  try {
+    const { data: thread } = await supabase
+      .from("product_threads")
+      .select("id, buyer_id, seller_id, buyer_unread, seller_unread")
+      .eq("id", threadId)
+      .maybeSingle();
+    if (thread) {
+      const buyerId = String(thread.buyer_id);
+      const sellerId = thread.seller_id ? String(thread.seller_id) : null;
+      const { sendPushToUser } = await import("@/lib/push");
+      const payloadBase = {
+        title: String(product.title || "Chat baru"),
+        body: `${user.name}: ${body.slice(0, 100)}`,
+        url: `/dashboard/chat?id=${threadId}`,
+        tag: `chat-${threadId}`,
+      };
+
+      if (user.id === buyerId) {
+        // Pembeli kirim → ke penjual (atau semua admin jika Official).
+        if (sellerId && sellerId !== user.id) {
+          void sendPushToUser(sellerId, {
+            ...payloadBase,
+            badge: Number(thread.seller_unread ?? 0) || 1,
+          });
+        } else if (!sellerId) {
+          const { createAdminClient } = await import("@/lib/supabase/admin");
+          const admin = createAdminClient();
+          const { data: admins } = await admin
+            .from("profiles")
+            .select("id")
+            .eq("role", "admin")
+            .limit(8);
+          for (const a of admins || []) {
+            if (String(a.id) === user.id) continue;
+            void sendPushToUser(String(a.id), {
+              ...payloadBase,
+              badge: Number(thread.seller_unread ?? 0) || 1,
+            });
+          }
+        }
+      } else if (buyerId !== user.id) {
+        void sendPushToUser(buyerId, {
+          ...payloadBase,
+          badge: Number(thread.buyer_unread ?? 0) || 1,
+        });
+      }
+    }
+  } catch {
+    // Push opsional — jangan gagalkan kirim pesan.
+  }
+
   return {
     ok: true,
     threadId,
     messageId: inserted?.id ? String(inserted.id) : undefined,
     createdAt: inserted?.created_at ? String(inserted.created_at) : undefined,
   };
+}
+
+export async function markProductChatRead(threadId: string) {
+  if (!supabaseReady || !isUuid(threadId)) return { error: "invalid" };
+  const user = await getCurrentUser();
+  if (!user) return { error: "login" };
+  const { markProductThreadRead } = await import("@/lib/product-chat");
+  return markProductThreadRead(threadId, user.id);
+}
+
+export async function savePushSubscription(input: {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  userAgent?: string;
+}) {
+  if (!supabaseReady) return { error: "db" };
+  const user = await getCurrentUser();
+  if (!user) return { error: "login" };
+  const endpoint = String(input.endpoint || "").trim();
+  const p256dh = String(input.keys?.p256dh || "").trim();
+  const auth = String(input.keys?.auth || "").trim();
+  if (!endpoint || !p256dh || !auth) return { error: "invalid" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("push_subscriptions").upsert(
+    {
+      user_id: user.id,
+      endpoint,
+      p256dh,
+      auth,
+      user_agent: String(input.userAgent || "").slice(0, 240) || null,
+    },
+    { onConflict: "endpoint" }
+  );
+  if (error) return { error: "save_failed" };
+  return { ok: true };
+}
+
+export async function getChatUnreadBadge() {
+  if (!supabaseReady) return { count: 0 };
+  const user = await getCurrentUser();
+  if (!user) return { count: 0 };
+  const { getChatUnreadTotal } = await import("@/lib/product-chat");
+  return { count: await getChatUnreadTotal(user) };
 }
 
 /** Catat buka halaman detail produk (untuk urutan terpopuler di Market). */

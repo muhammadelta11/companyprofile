@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import type { Role } from "@/lib/auth";
 import { signOut } from "../masuk/actions";
 import { AdminNotify } from "@/components/dashboard/AdminNotify";
+import { ChatNotify } from "@/components/dashboard/ChatNotify";
 import { DashToast } from "@/components/dashboard/DashToast";
 
 type NavItem = { href: string; label: string; hint?: string; roles: Role[] };
@@ -77,16 +79,42 @@ export function DashNav({
   role,
   city,
   storeHref,
+  chatUnread = 0,
 }: {
   name: string;
   role: Role;
   city?: string | null;
   storeHref?: string | null;
+  chatUnread?: number;
 }) {
   const path = usePathname();
   const searchParams = useSearchParams();
+  const [unread, setUnread] = useState(chatUnread);
   const flat = GROUPS.flatMap((g) => g.items.filter((i) => i.roles.includes(role)));
   const subtitle = [ROLE_LABEL[role], city?.trim() || null].filter(Boolean).join(" · ");
+
+  useEffect(() => {
+    setUnread(chatUnread);
+  }, [chatUnread]);
+
+  useEffect(() => {
+    const onUnread = (e: Event) => {
+      const count = (e as CustomEvent<{ count?: number }>).detail?.count;
+      if (typeof count === "number") setUnread(count);
+    };
+    window.addEventListener("chat-unread", onUnread);
+    return () => window.removeEventListener("chat-unread", onUnread);
+  }, []);
+
+  function labelFor(href: string, label: string) {
+    if (href !== "/dashboard/chat" || unread <= 0) return label;
+    return (
+      <>
+        {label}
+        <em className="dash-nav__badge">{unread > 9 ? "9+" : unread}</em>
+      </>
+    );
+  }
 
   return (
     <aside className={`dash-side${role === "mitra" ? " dash-side--mitra" : ""}`}>
@@ -101,6 +129,7 @@ export function DashNav({
             </Link>
           ) : null}
         </div>
+        <ChatNotify initialCount={chatUnread} />
         {role === "admin" ? <AdminNotify /> : null}
         <form action={signOut} className="dash-side__logout">
           <button className="dash-logout" type="submit">
@@ -117,7 +146,7 @@ export function DashNav({
             href={l.href}
             className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
           >
-            {l.label}
+            {labelFor(l.href, l.label)}
           </Link>
         ))}
       </nav>
@@ -138,7 +167,7 @@ export function DashNav({
                     href={l.href}
                     className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
                   >
-                    {l.label}
+                    {labelFor(l.href, l.label)}
                   </Link>
                 ))}
               </div>

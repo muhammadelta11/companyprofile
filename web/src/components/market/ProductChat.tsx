@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { fetchProductThreadMessages, sendProductChatMessage } from "@/app/actions";
+import {
+  fetchProductThreadMessages,
+  markProductChatRead,
+  sendProductChatMessage,
+} from "@/app/actions";
 import { useProductChatRealtime } from "@/hooks/useProductChatRealtime";
 import { loginHref } from "@/lib/access-policy";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -90,6 +94,12 @@ export function ProductChat({
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [liveMessages, activeThreadId]);
+
+  useEffect(() => {
+    const id = isSellerView ? activeThreadId : localThreadId ?? thread?.id ?? null;
+    if (!canChat || !id) return;
+    void markProductChatRead(id);
+  }, [canChat, isSellerView, activeThreadId, localThreadId, thread?.id]);
 
   useEffect(() => {
     if (!canChat || !isSellerView || !userId) return;
