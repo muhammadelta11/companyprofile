@@ -107,6 +107,20 @@ export async function placeOrder(
     if (fallback.error) return { error: "Gagal mencatat order. Coba lagi." };
   }
 
+  try {
+    const { notifyAdmins, notifyUser } = await import("@/lib/push");
+    const orderPush = {
+      title: "Pesanan baru",
+      body: `${name} order ${product.title}`,
+      url: "/dashboard/pesanan",
+      tag: "order",
+    };
+    if (product.owner_id) notifyUser(String(product.owner_id), orderPush);
+    else notifyAdmins(orderPush);
+  } catch {
+    /* push opsional */
+  }
+
   const orderId = order?.id ? String(order.id).slice(0, 8) : "baru";
   const areaHint =
     product.shipping_mode === "pickup"
@@ -168,7 +182,7 @@ export async function postProductComment(input: {
   const supabase = await createClient();
   const { data: product } = await supabase
     .from("products")
-    .select("id, status")
+    .select("id, status, title, owner_id")
     .eq("id", input.productId)
     .maybeSingle();
   if (!product || product.status !== "approved") {
@@ -184,6 +198,22 @@ export async function postProductComment(input: {
     return { error: "Gagal mengirim. Jalankan product-comments.sql atau coba lagi." };
   }
   updateTag(`product-comments-${input.productId}`);
+
+  try {
+    const { notifyAdmins, notifyUser } = await import("@/lib/push");
+    const preview = body.slice(0, 80);
+    const push = {
+      title: "Komentar produk",
+      body: `${user.name}: ${preview}`,
+      url: `/market/${input.productId}`,
+      tag: "comment",
+    };
+    if (product.owner_id) notifyUser(String(product.owner_id), push);
+    else notifyAdmins(push);
+  } catch {
+    /* push opsional */
+  }
+
   return { ok: true };
 }
 
@@ -550,6 +580,19 @@ export async function submitApplication(input: {
     detail: detail || null,
   });
   if (error) return { error: "Gagal menyimpan pendaftaran. Coba lagi." };
+
+  try {
+    const { notifyAdmins } = await import("@/lib/push");
+    notifyAdmins({
+      title: "Pendaftar baru",
+      body: `${name} · ${input.role}${input.city ? ` · ${input.city.trim()}` : ""}`,
+      url: "/dashboard/pendaftar",
+      tag: "application",
+    });
+  } catch {
+    /* push opsional */
+  }
+
   return { ok: true };
 }
 
@@ -590,6 +633,27 @@ export async function submitFeedback(input: {
     page: (input.page ?? "").trim().slice(0, 200) || null,
   });
   if (error) return { error: "Gagal mengirim. Jalankan ops-p0.sql atau coba lagi." };
+
+  try {
+    const { notifyAdmins } = await import("@/lib/push");
+    const kindLabel =
+      kind === "bug"
+        ? "Laporan bug"
+        : kind === "idea"
+          ? "Usulan"
+          : kind === "complaint"
+            ? "Keluhan"
+            : "Masukan";
+    notifyAdmins({
+      title: kindLabel,
+      body: message.slice(0, 100),
+      url: "/dashboard/masukan",
+      tag: "feedback",
+    });
+  } catch {
+    /* push opsional */
+  }
+
   return { ok: true };
 }
 

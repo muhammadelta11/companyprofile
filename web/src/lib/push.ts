@@ -72,3 +72,37 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
     })
   );
 }
+
+/** Push ke semua akun admin (lonceng HP untuk masukan, pendaftar, dll.). */
+export async function sendPushToAdmins(payload: PushPayload) {
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return;
+  }
+  const { data: admins } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("role", "admin")
+    .limit(12);
+  await Promise.all(
+    (admins || []).map((row) =>
+      sendPushToUser(String(row.id), {
+        ...payload,
+        tag: payload.tag || "admin",
+        url: payload.url || "/dashboard",
+      })
+    )
+  );
+}
+
+/** Fire-and-forget helper — jangan gagalkan aksi utama. */
+export function notifyAdmins(payload: PushPayload) {
+  void sendPushToAdmins(payload).catch(() => {});
+}
+
+export function notifyUser(userId: string | null | undefined, payload: PushPayload) {
+  if (!userId) return;
+  void sendPushToUser(userId, payload).catch(() => {});
+}

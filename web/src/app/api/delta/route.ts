@@ -105,6 +105,19 @@ export async function POST(req: Request) {
         answer: reply.slice(0, 1000),
         confidence,
       });
+    if (confidence === "low") {
+      try {
+        const { notifyAdmins } = await import("@/lib/push");
+        notifyAdmins({
+          title: "Delta belum terjawab",
+          body: message.slice(0, 100),
+          url: "/dashboard/delta",
+          tag: "delta-low",
+        });
+      } catch {
+        /* push opsional */
+      }
+    }
   }
 
   const handoffText = `Halo Mas'ud, saya dari website ${SITE.domain} (halaman ${page}).\n\nPertanyaan: ${message}\n\nRingkasan Delta:\n${reply}`;

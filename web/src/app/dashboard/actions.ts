@@ -210,6 +210,7 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
       } else {
         // Edit mitra → antre lagi, hapus alasan tolak lama
         row.reject_reason = null;
+        row.status = "pending";
       }
 
       if (id) {
@@ -219,10 +220,36 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
           previousMedia,
           collectUrls(cover, gallery, description)
         );
+        if (user.role !== "admin") {
+          try {
+            const { notifyAdmins } = await import("@/lib/push");
+            notifyAdmins({
+              title: "Produk diajukan ulang",
+              body: String(row.title || "Produk mitra"),
+              url: "/dashboard/produk?sumber=mitra",
+              tag: "product-pending",
+            });
+          } catch {
+            /* push opsional */
+          }
+        }
       } else {
         row.owner_id = user.role === "admin" ? null : user.id;
         row.status = user.role === "admin" ? "approved" : "pending";
         check((await supabase.from("products").insert(row)).error);
+        if (row.status === "pending") {
+          try {
+            const { notifyAdmins } = await import("@/lib/push");
+            notifyAdmins({
+              title: "Produk baru menunggu",
+              body: String(row.title || "Produk mitra"),
+              url: "/dashboard/produk?sumber=mitra",
+              tag: "product-pending",
+            });
+          } catch {
+            /* push opsional */
+          }
+        }
       }
       updateTag("products");
       refresh();
