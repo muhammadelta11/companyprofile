@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import { sendNotification, setVapidDetails } from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PushPayload = {
@@ -26,7 +26,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   const vapid = vapidReady();
   if (!vapid || !userId) return;
 
-  webpush.setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
+  setVapidDetails(vapid.subject, vapid.publicKey, vapid.privateKey);
 
   let admin;
   try {
@@ -53,7 +53,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   await Promise.all(
     rows.map(async (row) => {
       try {
-        await webpush.sendNotification(
+        await sendNotification(
           {
             endpoint: String(row.endpoint),
             keys: {

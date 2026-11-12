@@ -4,14 +4,17 @@ declare module "web-push" {
     keys: { p256dh: string; auth: string };
   };
 
-  const webpush: {
-    setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
-    sendNotification(
-      subscription: PushSubscription,
-      payload?: string | Buffer,
-      options?: object
-    ): Promise<unknown>;
-  };
+  export function setVapidDetails(
+    subject: string,
+    publicKey: string,
+    privateKey: string
+  ): void;
 
-  export default webpush;
+  export function sendNotification(
+    subscription: PushSubscription,
+    payload?: string | Buffer,
+    options?: object
+  ): Promise<unknown>;
+
+  export function generateVAPIDKeys(): { publicKey: string; privateKey: string };
 }
