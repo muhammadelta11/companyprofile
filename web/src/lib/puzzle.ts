@@ -186,107 +186,24 @@ export type PuzzleImage = {
   src: string;
 };
 
-const U = (id: string, v = 1) =>
-  `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&h=900&q=80&v=${v}`;
-
-/** Galeri puzzle: pemandangan, bunga, lucu/menghibur. */
+/** Galeri lokal di /public/puzzle — stabil, tanpa ketergantungan CDN. */
 export const PUZZLE_IMAGES: PuzzleImage[] = [
-  {
-    id: "gunung",
-    label: "Gunung pagi",
-    theme: "pemandangan",
-    src: U("photo-1506905925346-21bda4d32df4"),
-  },
-  {
-    id: "pantai",
-    label: "Pantai biru",
-    theme: "pemandangan",
-    src: U("photo-1507525428034-b723cf961d3e"),
-  },
-  {
-    id: "hutan",
-    label: "Hutan hijau",
-    theme: "pemandangan",
-    src: U("photo-1441974231531-c6227db76b6e"),
-  },
-  {
-    id: "danau",
-    label: "Danau tenang",
-    theme: "pemandangan",
-    src: U("photo-1439066615861-d1af74d74000"),
-  },
-  {
-    id: "sunset",
-    label: "Matahari terbenam",
-    theme: "pemandangan",
-    src: U("photo-1470071459604-3b5ec3a7fe05"),
-  },
-  {
-    id: "lavendel",
-    label: "Ladang lavender",
-    theme: "bunga",
-    src: U("photo-1499002238440-d264edd596ec"),
-  },
-  {
-    id: "tulip",
-    label: "Tulip warna-warni",
-    theme: "bunga",
-    src: U("photo-1490750967868-88aa4486c946"),
-  },
-  {
-    id: "sakura",
-    label: "Bunga sakura",
-    theme: "bunga",
-    src: U("photo-1522383225653-ed111181a951"),
-  },
-  {
-    id: "bunga-kuning",
-    label: "Bunga kuning cerah",
-    theme: "bunga",
-    src: U("photo-1468327768560-75b448c3b31f"),
-  },
-  {
-    id: "daisy",
-    label: "Daisy di padang",
-    theme: "bunga",
-    src: U("photo-1416879595882-3373a0480b5b"),
-  },
-  {
-    id: "kucing",
-    label: "Kucing lucu",
-    theme: "lucu",
-    src: U("photo-1514888286974-6c03e2ca1dba"),
-  },
-  {
-    id: "anjing",
-    label: "Anjing ceria",
-    theme: "lucu",
-    src: U("photo-1548199973-03cce0bbc87b"),
-  },
-  {
-    id: "panda",
-    label: "Panda menggemaskan",
-    theme: "lucu",
-    src: U("photo-1564349683136-77e08dba1ef7"),
-  },
-  {
-    id: "rubah",
-    label: "Rubah oranye",
-    theme: "lucu",
-    src: U("photo-1474511320723-9a8520640f94"),
-  },
-  {
-    id: "balon",
-    label: "Balon udara",
-    theme: "lucu",
-    src: U("photo-1507608616759-54d48f0d7e1a"),
-  },
-  {
-    id: "eskrim",
-    label: "Es krim warna-warni",
-    theme: "lucu",
-    src: U("photo-1497034825429-c343d7c6a68f"),
-  },
+  { id: "gunung", label: "Gunung pagi", theme: "pemandangan", src: "/puzzle/gunung.jpg" },
+  { id: "pantai", label: "Pantai biru", theme: "pemandangan", src: "/puzzle/pantai.jpg" },
+  { id: "hutan", label: "Hutan hijau", theme: "pemandangan", src: "/puzzle/hutan.jpg" },
+  { id: "danau", label: "Danau tenang", theme: "pemandangan", src: "/puzzle/danau.jpg" },
+  { id: "sunset", label: "Matahari terbenam", theme: "pemandangan", src: "/puzzle/sunset.jpg" },
+  { id: "lavender", label: "Ladang lavender", theme: "bunga", src: "/puzzle/lavender.jpg" },
+  { id: "tulip", label: "Tulip warna-warni", theme: "bunga", src: "/puzzle/tulip.jpg" },
+  { id: "sakura", label: "Bunga sakura", theme: "bunga", src: "/puzzle/sakura.jpg" },
+  { id: "daisy", label: "Daisy putih", theme: "bunga", src: "/puzzle/daisy.jpg" },
+  { id: "mawar", label: "Mawar pelangi", theme: "bunga", src: "/puzzle/mawar.jpg" },
+  { id: "kucing", label: "Kucing lucu", theme: "lucu", src: "/puzzle/kucing.jpg" },
+  { id: "anjing", label: "Anjing ceria", theme: "lucu", src: "/puzzle/anjing.jpg" },
+  { id: "panda", label: "Panda menggemaskan", theme: "lucu", src: "/puzzle/panda.jpg" },
+  { id: "burung", label: "Burung cerah", theme: "lucu", src: "/puzzle/burung.jpg" },
+  { id: "hamster", label: "Hamster lucu", theme: "lucu", src: "/puzzle/hamster.jpg" },
+  { id: "ceria", label: "Hari ceria", theme: "lucu", src: "/puzzle/ceria.jpg" },
 ];
 
 export const PUZZLE_IMAGE_THEMES: { id: PuzzleImageTheme; label: string }[] = [
