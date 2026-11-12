@@ -100,7 +100,11 @@ async function Products({ searchParams }: Props) {
     area_lng: p.area_lng ?? null,
     area_radius_km: p.area_radius_km ?? null,
   }));
-  const canCreate = (isAdmin && sumber === "sendiri") || (!isAdmin && user.status === "active");
+  const hasWa =
+    Boolean(user.phone?.trim()) && user.phone.replace(/\D/g, "").length >= 10;
+  const canCreate =
+    (isAdmin && sumber === "sendiri") ||
+    (!isAdmin && user.status === "active" && hasWa);
 
   const approvedByOwner = new Map<string, number>();
   for (const p of products) {
@@ -145,12 +149,19 @@ async function Products({ searchParams }: Props) {
         </nav>
       ) : null}
 
+      {!isAdmin && user.status === "active" && !hasWa ? (
+        <p className="dash-notice dash-notice--warn">
+          Isi WhatsApp di Profil dulu sebelum upload produk. Order pembeli masuk ke nomor kamu,
+          bukan admin. <Link href="/dashboard/profil">Isi nomor sekarang</Link>
+        </p>
+      ) : null}
+
       {canCreate ? (
         <details className="dash-create">
           <summary>+ Tambah produk</summary>
           <ProductForm user={user} />
         </details>
-      ) : !isAdmin ? (
+      ) : !isAdmin && user.status !== "active" ? (
         <p className="dash-notice">Akun mitra kamu belum diverifikasi admin.</p>
       ) : null}
 

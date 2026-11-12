@@ -1,14 +1,14 @@
 import { requireUser } from "@/lib/auth";
-import { getOrderWaMode, getSiteSettings, HERO_PAGES } from "@/lib/site-settings";
+import { getSiteSettings, HERO_PAGES } from "@/lib/site-settings";
 import { HeroImageField } from "@/components/dashboard/HeroImageField";
-import { saveHeroSettings, saveOrderWaMode } from "../actions";
+import { saveHeroSettings } from "../actions";
 import { SafeForm } from "../SafeForm";
 import { SubmitButton } from "../SubmitButton";
 import { DashHead } from "../ui";
 
 export default async function TampilanPage() {
   await requireUser(["admin"]);
-  const [settings, waMode] = await Promise.all([getSiteSettings(), getOrderWaMode()]);
+  const settings = await getSiteSettings();
 
   return (
     <>
@@ -34,38 +34,11 @@ export default async function TampilanPage() {
 
       <section className="dash-card" style={{ marginTop: "1.25rem" }}>
         <h2 style={{ margin: "0 0 0.35rem", fontSize: "1.05rem" }}>Routing WhatsApp order</h2>
-        <p style={{ margin: "0 0 0.85rem", color: "var(--muted)", fontSize: "0.88rem" }}>
-          Default aman: semua order masuk WA admin dulu (filter spam), lalu diteruskan ke mitra.
-          Mode seller mengarahkan langsung ke nomor mitra bila sudah diisi.
+        <p style={{ margin: "0", color: "var(--muted)", fontSize: "0.88rem", lineHeight: 1.55 }}>
+          Sudah tetap: order produk <strong>mitra</strong> langsung ke WhatsApp masing-masing
+          penjual (nomor wajib di Profil). Produk <strong>official</strong> (tanpa owner) ke WA
+          admin. Jika mitra belum isi WA, order diblokir dan produk tidak bisa disetujui.
         </p>
-        <SafeForm action={saveOrderWaMode} className="form-stack" persistKey="order-wa-mode">
-          <fieldset className="join-roles join-roles--two" style={{ border: 0, padding: 0, margin: 0 }}>
-            <legend className="sr-only">Mode WA order</legend>
-            <label className={`join-role${waMode === "admin" ? " is-active" : ""}`}>
-              <input
-                type="radio"
-                name="order_wa_mode"
-                value="admin"
-                defaultChecked={waMode === "admin"}
-                style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-              />
-              <strong>WA Admin saja</strong>
-              <span>Semua order ke nomor official. Mitra tidak diganggu spam.</span>
-            </label>
-            <label className={`join-role${waMode === "seller" ? " is-active" : ""}`}>
-              <input
-                type="radio"
-                name="order_wa_mode"
-                value="seller"
-                defaultChecked={waMode === "seller"}
-                style={{ position: "absolute", opacity: 0, pointerEvents: "none" }}
-              />
-              <strong>Langsung ke mitra</strong>
-              <span>Order mitra ke WA penjual (fallback admin jika nomor kosong).</span>
-            </label>
-          </fieldset>
-          <SubmitButton>Simpan routing WA</SubmitButton>
-        </SafeForm>
       </section>
     </>
   );

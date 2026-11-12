@@ -4,7 +4,7 @@
  * Tamu: lihat katalog/detail.
  * Order WA: boleh tanpa login (konversi), dengan anti-spam.
  * Komentar / chat tulis: wajib login.
- * WA order: default ke admin (kurangi spam ke mitra); bisa diganti di Tampilan.
+ * WA order: produk mitra → WA mitra (nomor wajib); produk official → WA admin.
  */
 
 export const ACCESS_POLICY = {
@@ -12,8 +12,8 @@ export const ACCESS_POLICY = {
   guestCanOrderWa: true,
   commentRequiresLogin: true,
   chatRequiresLogin: true,
-  /** Default aman: semua order WA masuk nomor admin dulu. */
-  defaultOrderWaMode: "admin" as OrderWaMode,
+  /** Produk mitra selalu ke WA penjual; official ke admin. */
+  defaultOrderWaMode: "seller" as OrderWaMode,
 } as const;
 
 export type OrderWaMode = "admin" | "seller";

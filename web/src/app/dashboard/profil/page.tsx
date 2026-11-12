@@ -149,14 +149,25 @@ async function Profile() {
         ) : null}
         <div className="form-row">
           <label>
-            No. WhatsApp
-            <input name="phone" type="tel" defaultValue={user.phone} />
+            No. WhatsApp{user.role === "mitra" ? " (wajib)" : ""}
+            <input
+              name="phone"
+              type="tel"
+              defaultValue={user.phone}
+              required={user.role === "mitra"}
+              placeholder="08xxxxxxxxxx"
+            />
           </label>
           <label>
             Kota
             <input name="city" defaultValue={user.city} />
           </label>
         </div>
+        {user.role === "mitra" ? (
+          <p className="dash-form-hint">
+            Wajib diisi segera. Order WA dari Market masuk ke nomor ini — bukan ke admin.
+          </p>
+        ) : null}
         <SubmitButton>Simpan profil</SubmitButton>
       </SafeForm>
     </>

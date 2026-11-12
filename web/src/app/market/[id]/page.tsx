@@ -8,12 +8,12 @@ import { JsonLd } from "@/components/JsonLd";
 import { mergeGallery } from "@/lib/gallery";
 import { OrderLink } from "@/components/OrderLink";
 import { ProductChat } from "@/components/market/ProductChat";
+import { ProductChatLink } from "@/components/market/ProductChatLink";
 import { ProductComments } from "@/components/market/ProductComments";
 import { ProductViewBeacon } from "@/components/market/ProductViewBeacon";
 import { RichHtml } from "@/components/RichHtml";
 import { ShareBar } from "@/components/ShareBar";
 import { productExtra } from "@/data/catalog-extra";
-import { productChatHref } from "@/lib/access-policy";
 import { getCurrentUser } from "@/lib/auth";
 import { getProductComments } from "@/lib/comments";
 import { getProduct, getProducts } from "@/lib/content";
@@ -246,9 +246,13 @@ async function MarketDetail({ params, searchParams }: Props) {
               >
                 Order via WhatsApp
               </OrderLink>
-              <Link className="btn btn-outline" href={productChatHref(product.id, canChat)}>
+              <ProductChatLink
+                productId={product.id}
+                loggedIn={canChat}
+                className="btn btn-outline"
+              >
                 Chat penjual
-              </Link>
+              </ProductChatLink>
               <Link className="btn btn-outline" href="/market">
                 Kembali
               </Link>
@@ -314,12 +318,11 @@ async function MarketDetail({ params, searchParams }: Props) {
                     <div className="mk-card__foot">
                       <strong>{p.price_label ?? "Hubungi WA"}</strong>
                       <div className="mk-card__actions">
-                        <Link
-                          href={productChatHref(p.id, canChat)}
+                        <ProductChatLink
+                          productId={p.id}
+                          loggedIn={canChat}
                           className="btn btn-outline mk-card__chat"
-                        >
-                          Chat
-                        </Link>
+                        />
                         <OrderLink
                           className="btn btn-teal mk-card__buy"
                           productId={p.id}

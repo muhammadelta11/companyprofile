@@ -70,6 +70,27 @@ export function ProductChat({
     startedAt.current = Date.now();
   }, []);
 
+  // Hash / flag dari tombol Chat di kartu → scroll ke panel chat.
+  useEffect(() => {
+    let shouldScroll = window.location.hash === "#chat-produk";
+    try {
+      if (sessionStorage.getItem("scroll-chat-produk") === productId) {
+        shouldScroll = true;
+        sessionStorage.removeItem("scroll-chat-produk");
+      }
+    } catch {
+      /* ignore */
+    }
+    if (!shouldScroll) return;
+    const t = window.setTimeout(() => {
+      document.getElementById("chat-produk")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [productId]);
+
   useEffect(() => {
     setActiveThreadId(thread?.id ?? sellerThreads[0]?.id ?? null);
     setLocalThreadId(thread?.id ?? null);

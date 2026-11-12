@@ -17,6 +17,7 @@ const TABS: { href: string; label: string; icon: IconName }[] = [
 ];
 
 const MORE: { href: string; label: string; text: string; icon: IconName }[] = [
+  { href: "/game", label: "Puzzle", text: "Susun gambar · ranking mingguan", icon: "spark" },
   { href: "/proyek", label: "Proyek", text: "Portofolio karya", icon: "folder" },
   { href: "/gabung", label: "Gabung", text: "Member · mitra · partner", icon: "userPlus" },
   { href: "/tentang", label: "Tentang", text: "Kenalan dengan Mas'ud", icon: "user" },

@@ -4,10 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { ProductItem } from "@/lib/product";
-import { productChatHref } from "@/lib/access-policy";
 import { matchesQuery } from "@/lib/catalog-search";
 import { sellerHref, sellerLabel, shippingLabel } from "@/lib/product";
 import { CatalogSearch } from "@/components/CatalogSearch";
+import { ProductChatLink } from "@/components/market/ProductChatLink";
 import { OrderLink } from "@/components/OrderLink";
 
 const SCOPES = [
@@ -255,13 +255,11 @@ export function MarketCatalog({
               <div className="mk-card__foot">
                 <strong>{p.price_label ?? "Hubungi WA"}</strong>
                 <div className="mk-card__actions">
-                  <Link
-                    href={productChatHref(p.id, canChat)}
+                  <ProductChatLink
+                    productId={p.id}
+                    loggedIn={canChat}
                     className="btn btn-outline mk-card__chat"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    Chat
-                  </Link>
+                  />
                   <OrderLink
                     className="btn btn-teal mk-card__buy"
                     productId={p.id}

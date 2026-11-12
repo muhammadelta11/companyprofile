@@ -115,8 +115,8 @@ async function MitraOverview({ user }: { user: CurrentUser }) {
 
   const checklist = [
     {
-      ok: Boolean(user.phone?.trim()),
-      label: "Nomor WhatsApp terisi",
+      ok: Boolean(user.phone?.trim()) && user.phone.replace(/\D/g, "").length >= 10,
+      label: "WhatsApp wajib (order masuk ke nomor ini)",
       href: "/dashboard/profil",
     },
     {
@@ -185,6 +185,13 @@ async function MitraOverview({ user }: { user: CurrentUser }) {
       {user.status === "pending" ? (
         <p className="dash-notice">
           Akun mitra sedang diverifikasi admin. Setelah aktif, kamu bisa upload produk.
+        </p>
+      ) : null}
+
+      {!user.phone?.trim() || user.phone.replace(/\D/g, "").length < 10 ? (
+        <p className="dash-notice dash-notice--warn">
+          WhatsApp belum diisi — wajib segera. Order pembeli dikirim ke WA kamu, bukan admin.{" "}
+          <Link href="/dashboard/profil">Isi nomor sekarang</Link>
         </p>
       ) : null}
 

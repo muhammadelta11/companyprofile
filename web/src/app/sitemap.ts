@@ -7,6 +7,7 @@ const STATIC: { path: string; changeFrequency: MetadataRoute.Sitemap[0]["changeF
   { path: "/market", changeFrequency: "daily", priority: 0.95 },
   { path: "/layanan", changeFrequency: "monthly", priority: 0.85 },
   { path: "/wisata", changeFrequency: "weekly", priority: 0.85 },
+  { path: "/game", changeFrequency: "weekly", priority: 0.75 },
   { path: "/proyek", changeFrequency: "monthly", priority: 0.7 },
   { path: "/tentang", changeFrequency: "monthly", priority: 0.7 },
   { path: "/gabung", changeFrequency: "monthly", priority: 0.65 },

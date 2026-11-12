@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/server";
 import { publicClient } from "@/lib/supabase/public";
 import { supabaseReady } from "@/lib/supabase/env";
 import { isUuid } from "@/lib/content";
-import { getOrderWaMode } from "@/lib/site-settings";
 import { isHoneypot, isRateLimited, isTooFast } from "@/lib/spam";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { waLink, waTo } from "@/data/site";
@@ -26,8 +25,7 @@ export type PlaceOrderInput = {
 
 /**
  * Simpan order + kembalikan URL WA.
- * Mode `admin` (default): semua ke WA official — kurangi spam ke mitra.
- * Mode `seller`: ke nomor mitra bila ada, else admin.
+ * Produk mitra → WA mitra (wajib nomor terisi). Produk official → WA admin.
  * Tamu boleh order tanpa login.
  */
 export async function placeOrder(
@@ -73,11 +71,18 @@ export async function placeOrder(
   if (product.owner_id) {
     const { data: seller } = await supabase
       .from("profiles")
-      .select("full_name, phone")
+      .select("full_name, shop_name, phone")
       .eq("id", product.owner_id)
       .maybeSingle();
-    sellerName = seller?.full_name?.trim() || "Mitra";
+    sellerName =
+      seller?.shop_name?.trim() || seller?.full_name?.trim() || "Mitra";
     sellerPhone = seller?.phone?.replace(/\D/g, "") || null;
+    if (!sellerPhone || sellerPhone.length < 10) {
+      return {
+        error:
+          "Penjual belum mengisi WhatsApp. Order belum bisa dilanjutkan — coba lagi nanti atau hubungi admin.",
+      };
+    }
   }
 
   const { data: order, error: orderErr } = await supabase
@@ -114,16 +119,14 @@ export async function placeOrder(
             ? `Area: ${product.service_area}`
             : "Area: tanya penjual";
 
-  const waMode = await getOrderWaMode();
-  const routeToSeller =
-    waMode === "seller" && Boolean(sellerPhone && sellerPhone.length >= 10);
+  // Mitra → WA penjual. Official → WA admin.
+  const routeToSeller = Boolean(product.owner_id && sellerPhone && sellerPhone.length >= 10);
   const greet = routeToSeller ? sellerName : "Admin Mas'ud El-Tamamy";
 
   const text = [
     `Halo ${greet}, saya mau order via masudeltamamy.com`,
     `Order #${orderId}`,
     `Produk: ${product.title}${product.price_label ? ` (${product.price_label})` : ""}`,
-    product.owner_id && !routeToSeller ? `Penjual: ${sellerName}` : null,
     `Pengiriman: ${areaHint}`,
     `Nama: ${name}`,
     `WA: ${phone}`,
@@ -411,5 +414,56 @@ export async function submitFeedback(input: {
     page: (input.page ?? "").trim().slice(0, 200) || null,
   });
   if (error) return { error: "Gagal mengirim. Jalankan ops-p0.sql atau coba lagi." };
+  return { ok: true };
+}
+
+/** Simpan skor puzzle (wajib login) untuk leaderboard mingguan. */
+export async function submitPuzzleScore(input: {
+  level: string;
+  size: number;
+  moves: number;
+  seconds: number;
+  stars: number;
+  score: number;
+  badge?: string;
+  mode?: string;
+}): Promise<{ error?: string; ok?: boolean }> {
+  if (!supabaseReady) return { error: "Database belum terhubung." };
+  if (await isRateLimited("puzzle-score", 20)) {
+    return { error: "Terlalu cepat. Tunggu sebentar." };
+  }
+
+  const user = await getCurrentUser();
+  if (!user) return { error: "Masuk dulu untuk masuk papan peringkat." };
+  if (user.status === "suspended") return { error: "Akun ditangguhkan." };
+
+  const level = ["mudah", "sedang", "sulit"].includes(input.level) ? input.level : null;
+  if (!level) return { error: "Level tidak valid." };
+  if (![3, 4, 5].includes(input.size)) return { error: "Ukuran tidak valid." };
+
+  const moves = Math.max(0, Math.min(5000, Math.floor(Number(input.moves) || 0)));
+  const seconds = Math.max(0, Math.min(7200, Math.floor(Number(input.seconds) || 0)));
+  const stars = Math.max(1, Math.min(3, Math.floor(Number(input.stars) || 1)));
+  const score = Math.max(0, Math.min(100000, Math.floor(Number(input.score) || 0)));
+  const mode = input.mode === "angka" ? "angka" : "gambar";
+  const badge = (input.badge || "").trim().slice(0, 40) || null;
+  const player_name = (user.shop_name.trim() || user.name).slice(0, 80);
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("puzzle_scores").insert({
+    user_id: user.id,
+    player_name,
+    level,
+    size: input.size,
+    moves,
+    seconds,
+    stars,
+    score,
+    badge,
+    mode,
+  });
+  if (error) {
+    return { error: "Gagal menyimpan skor. Jalankan puzzle.sql di Supabase." };
+  }
   return { ok: true };
 }

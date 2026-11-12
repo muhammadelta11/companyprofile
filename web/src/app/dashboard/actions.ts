@@ -135,6 +135,14 @@ export async function saveProduct(fd: FormData): Promise<ActionResult> {
   return act(async () => {
       const user = await requireUser(["admin", "mitra"]);
       if (user.status !== "active") throw new Error("Akun mitra belum diverifikasi.");
+      if (user.role === "mitra") {
+        const digits = (user.phone ?? "").replace(/\D/g, "");
+        if (digits.length < 10) {
+          throw new Error(
+            "Isi nomor WhatsApp di Profil dulu. Order produk kamu akan masuk ke WA itu, bukan admin."
+          );
+        }
+      }
       const supabase = await createClient();
       const id = text(fd, "id");
 
@@ -226,6 +234,26 @@ export async function setProductStatus(id: string, status: string): Promise<Acti
       await requireUser(["admin"]);
       const supabase = await createClient();
       const value = pick(status, ["pending", "approved", "rejected"] as const, "pending");
+      if (value === "approved") {
+        const { data: product } = await supabase
+          .from("products")
+          .select("owner_id")
+          .eq("id", id)
+          .maybeSingle();
+        if (product?.owner_id) {
+          const { data: seller } = await supabase
+            .from("profiles")
+            .select("phone")
+            .eq("id", product.owner_id)
+            .maybeSingle();
+          const digits = (seller?.phone ?? "").replace(/\D/g, "");
+          if (digits.length < 10) {
+            throw new Error(
+              "Mitra belum mengisi WhatsApp. Minta isi di Profil dulu — order WA harus ke nomor mitra."
+            );
+          }
+        }
+      }
       const patch: Record<string, unknown> = { status: value };
       if (value === "approved") patch.reject_reason = null;
       check((await supabase.from("products").update(patch).eq("id", id)).error);
@@ -633,9 +661,18 @@ export async function updateProfile(fd: FormData): Promise<ActionResult> {
       const user = await requireUser();
       const supabase = await createClient();
       const { parseBrandCertsText } = await import("@/lib/seller-creds");
+      const phoneRaw = text(fd, "phone", 30);
+      const phoneDigits = phoneRaw.replace(/\D/g, "");
+      if (user.role === "mitra") {
+        if (phoneDigits.length < 10) {
+          throw new Error(
+            "Nomor WhatsApp wajib diisi (min. 10 digit). Order produk kamu dikirim ke nomor ini."
+          );
+        }
+      }
       const payload: Record<string, string | null | ReturnType<typeof parseBrandCertsText>> = {
         full_name: orNull(text(fd, "full_name", 120)),
-        phone: orNull(text(fd, "phone", 30)),
+        phone: orNull(phoneRaw),
         city: orNull(text(fd, "city", 120)),
       };
       if (user.role === "mitra" || user.role === "admin") {
@@ -998,21 +1035,3 @@ export async function saveHeroSettings(fd: FormData): Promise<ActionResult> {
   });
 }
 
-/** Mode routing WA order: admin (aman) | seller (langsung mitra). */
-export async function saveOrderWaMode(fd: FormData): Promise<ActionResult> {
-  return act(async () => {
-    await requireUser(["admin"]);
-    const mode = text(fd, "order_wa_mode", 20) === "seller" ? "seller" : "admin";
-    const supabase = await createClient();
-    check(
-      (
-        await supabase.from("site_settings").upsert(
-          { key: "order_wa_mode", value: mode, updated_at: new Date().toISOString() },
-          { onConflict: "key" }
-        )
-      ).error
-    );
-    updateTag("site-settings");
-    refresh();
-  });
-}
