@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { SiteHeader } from "./SiteHeader";
 import { SiteFooter } from "./SiteFooter";
 import { BottomNav } from "./BottomNav";
@@ -20,13 +21,26 @@ const InstallBanner = dynamic(() => import("./pwa/InstallBanner").then((m) => m.
   ssr: false,
 });
 
+function isAccountMode(path: string) {
+  return path === "/dashboard" || path.startsWith("/dashboard/");
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const path = usePathname() || "/";
+  const accountMode = isAccountMode(path);
   const [deltaOpen, setDeltaOpen] = useState(false);
   const [introDone, setIntroDone] = useState(false);
   const openDelta = useCallback(() => setDeltaOpen(true), []);
   const closeDelta = useCallback(() => setDeltaOpen(false), []);
   const finishIntro = useCallback(() => setIntroDone(true), []);
   const [fabCompact, setFabCompact] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("is-account-mode", accountMode);
+    return () => {
+      document.documentElement.classList.remove("is-account-mode");
+    };
+  }, [accountMode]);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
@@ -37,7 +51,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
       }
     };
-    // Jangan bersaing dengan first paint / hydration
     const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1800));
     const id = ric(run);
     return () => {
@@ -47,13 +60,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Intro di-skip (localStorage / head script) → anggap selesai segera
     if (document.documentElement.getAttribute("data-intro") !== "on") {
       setIntroDone(true);
     }
   }, []);
 
   useEffect(() => {
+    if (accountMode) return;
     let lastY = window.scrollY;
     const onScroll = () => {
       const y = window.scrollY;
@@ -63,9 +76,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [accountMode]);
 
   useEffect(() => {
+    if (accountMode) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
@@ -78,32 +92,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("delta:open", openDelta);
     };
-  }, [openDelta]);
+  }, [accountMode, openDelta]);
 
   return (
     <IntroContext.Provider value={introDone}>
-      <IntroShow onDone={finishIntro} />
-      {/* usePathname di header/nav harus di Suspense agar tidak blocking prerender */}
-      <Suspense fallback={<header className="site-header" aria-hidden="true" />}>
-        <SiteHeader onOpenDelta={openDelta} />
-      </Suspense>
-      <main className="main-shell">{children}</main>
-      <SiteFooter />
-      <Suspense fallback={null}>
-        <BottomNav onOpenDelta={openDelta} />
-      </Suspense>
-      <button
-        type="button"
-        className={`delta-fab${fabCompact ? " is-compact" : ""}`}
-        onClick={openDelta}
-        aria-label="Tanya Delta"
-      >
-        <img className="delta-fab__mark" src="/icon.svg" alt="" width={22} height={22} />
-        <span>Delta</span>
-      </button>
-      <InstallBanner />
-      <DeltaPanel open={deltaOpen} onClose={closeDelta} />
-      <SellerChatPanel />
+      {!accountMode ? <IntroShow onDone={finishIntro} /> : null}
+      {!accountMode ? (
+        <Suspense fallback={<header className="site-header" aria-hidden="true" />}>
+          <SiteHeader onOpenDelta={openDelta} />
+        </Suspense>
+      ) : null}
+      <main className={`main-shell${accountMode ? " main-shell--account" : ""}`}>{children}</main>
+      {!accountMode ? <SiteFooter /> : null}
+      {!accountMode ? (
+        <Suspense fallback={null}>
+          <BottomNav onOpenDelta={openDelta} />
+        </Suspense>
+      ) : null}
+      {!accountMode ? (
+        <button
+          type="button"
+          className={`delta-fab${fabCompact ? " is-compact" : ""}`}
+          onClick={openDelta}
+          aria-label="Tanya Delta"
+        >
+          <img className="delta-fab__mark" src="/icon.svg" alt="" width={22} height={22} />
+          <span>Delta</span>
+        </button>
+      ) : null}
+      {!accountMode ? <InstallBanner /> : null}
+      {!accountMode ? <DeltaPanel open={deltaOpen} onClose={closeDelta} /> : null}
+      {!accountMode ? <SellerChatPanel /> : null}
     </IntroContext.Provider>
   );
 }

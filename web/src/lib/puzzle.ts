@@ -31,7 +31,7 @@ export const PUZZLE_LEVELS: PuzzleLevel[] = [
     xpBase: 80,
     starTimes: [25, 50, 90],
     perks: ["Hint 1× per run", "Bintang gampang", "XP dasar"],
-    blurb: "Pemanasan 3×3. Kuasai pola, kumpulkan bintang.",
+    blurb: "Cocok buat pemula · ada hint",
     accent: "#0f766e",
   },
   {
@@ -44,7 +44,7 @@ export const PUZZLE_LEVELS: PuzzleLevel[] = [
     xpBase: 140,
     starTimes: [70, 140, 240],
     perks: ["Bonus streak harian", "XP 1,6×", "Badge Tangguh"],
-    blurb: "4×4 — keseimbangan refleks dan strategi.",
+    blurb: "Lebih menantang · skor lebih besar",
     accent: "#1d4ed8",
   },
   {
@@ -57,7 +57,7 @@ export const PUZZLE_LEVELS: PuzzleLevel[] = [
     xpBase: 220,
     starTimes: [150, 300, 480],
     perks: ["XP 2,5×", "Elite mingguan", "Badge Master"],
-    blurb: "5×5 untuk pejuang papan peringkat.",
+    blurb: "Papan terberat · buat rebut ranking",
     accent: "#b45309",
   },
 ];

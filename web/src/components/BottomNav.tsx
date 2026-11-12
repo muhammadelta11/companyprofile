@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { SITE, waLink } from "@/data/site";
+import { AccountLink } from "./AccountLink";
 import { Icon, type IconName } from "./Icon";
 import { useInstall } from "./pwa/useInstall";
 
@@ -17,12 +18,11 @@ const TABS: { href: string; label: string; icon: IconName }[] = [
 ];
 
 const MORE: { href: string; label: string; text: string; icon: IconName }[] = [
-  { href: "/game", label: "Puzzle", text: "Susun gambar · ranking mingguan", icon: "spark" },
+  { href: "/game", label: "Game", text: "Puzzle geser · ranking", icon: "spark" },
   { href: "/proyek", label: "Proyek", text: "Portofolio karya", icon: "folder" },
   { href: "/gabung", label: "Gabung", text: "Member · mitra · partner", icon: "userPlus" },
   { href: "/tentang", label: "Tentang", text: "Kenalan dengan Mas'ud", icon: "user" },
   { href: "/masukan", label: "Masukan", text: "Lapor bug · usulan · keluhan", icon: "mail" },
-  { href: "/dashboard", label: "Akun", text: "Masuk / dashboard", icon: "dashboard" },
 ];
 
 function isActive(path: string, href: string) {
@@ -142,6 +142,7 @@ export function BottomNav({ onOpenDelta }: { onOpenDelta: () => void }) {
               </div>
 
               <div className="sheet__actions">
+                <AccountLink variant="sheet" onNavigate={close} />
                 <button
                   type="button"
                   className="sheet__action sheet__action--primary"

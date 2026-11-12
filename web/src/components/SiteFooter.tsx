@@ -5,7 +5,7 @@ const LINKS = [
   { href: "/layanan", label: "Layanan" },
   { href: "/market", label: "Market" },
   { href: "/wisata", label: "Wisata" },
-  { href: "/game", label: "Puzzle" },
+  { href: "/game", label: "Game" },
   { href: "/proyek", label: "Proyek" },
   { href: "/tentang", label: "Tentang" },
   { href: "/gabung", label: "Gabung" },

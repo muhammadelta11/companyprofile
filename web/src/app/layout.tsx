@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { AppShell } from "@/components/AppShell";
@@ -102,7 +103,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col antialiased">
         <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
-        <AppShell>{children}</AppShell>
+        <Suspense fallback={<main className="main-shell">{children}</main>}>
+          <AppShell>{children}</AppShell>
+        </Suspense>
         <Analytics />
       </body>
     </html>

@@ -16,7 +16,7 @@ const GROUPS: NavGroup[] = [
   {
     title: "Utama",
     items: [
-      { href: "/dashboard", label: "Beranda", roles: ["admin", "mitra", "member"] },
+      { href: "/dashboard", label: "Ringkasan", roles: ["admin", "mitra", "member"] },
       { href: "/dashboard/pesanan", label: "Pesanan", roles: ["admin", "mitra", "member"] },
       { href: "/dashboard/chat", label: "Chat", roles: ["admin", "mitra", "member"] },
     ],
@@ -128,6 +128,9 @@ export function DashNav({
               Etalase publik
             </Link>
           ) : null}
+          <Link href="/" className="dash-user__site">
+            ← Kembali ke situs
+          </Link>
         </div>
         <ChatNotify initialCount={chatUnread} />
         {role === "admin" ? <AdminNotify /> : null}
@@ -137,6 +140,7 @@ export function DashNav({
           </button>
         </form>
       </div>
+      <p className="dash-mode-hint">Mode akun · kelola produk, chat, pesanan</p>
 
       {/* Mobile: satu baris chip; Desktop: grup */}
       <nav className="dash-nav dash-nav--chips" aria-label="Menu cepat">

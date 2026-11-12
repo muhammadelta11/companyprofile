@@ -53,8 +53,8 @@ async function AdminOverview() {
   return (
     <>
       <DashHead
-        title="Beranda admin"
-        text="Mulai dari daftar di bawah. Loneng 🔔 di menu kiri berbunyi kalau ada request baru."
+        title="Ringkasan akun"
+        text="Mode akun — kelola pesanan, produk, chat, dan masukan. Loneng 🔔 di menu berbunyi kalau ada request baru."
       />
       {actions.length ? (
         <section className="dash-actions">

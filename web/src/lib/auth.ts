@@ -98,8 +98,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 /** Wajib login; kalau `roles` diisi, peran lain dikembalikan ke ringkasan. */
 export async function requireUser(roles?: Role[]) {
   const user = await getCurrentUser();
-  if (!user) redirect("/masuk");
-  if (user.status === "suspended") redirect("/masuk");
+  if (!user || user.status === "suspended") {
+    const { loginHref } = await import("./access-policy");
+    redirect(loginHref("/dashboard"));
+  }
   if (roles && !roles.includes(user.role)) redirect("/dashboard");
   return user;
 }

@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SITE, waLink } from "@/data/site";
+import { AccountLink } from "./AccountLink";
 import { Icon } from "./Icon";
 
 const LINKS = [
   { href: "/layanan", label: "Layanan" },
   { href: "/market", label: "Market" },
   { href: "/wisata", label: "Wisata" },
-  { href: "/game", label: "Puzzle" },
+  { href: "/game", label: "Game" },
   { href: "/proyek", label: "Proyek" },
   { href: "/tentang", label: "Tentang" },
   { href: "/gabung", label: "Gabung" },
@@ -42,10 +43,7 @@ export function SiteHeader({ onOpenDelta }: { onOpenDelta?: () => void }) {
           <button type="button" className="btn-delta btn-delta--ask" onClick={onOpenDelta}>
             Tanya Delta
           </button>
-          <Link href="/dashboard" className="btn-delta" aria-label="Akun">
-            <Icon name="user" size={18} />
-            <span className="btn-label">Akun</span>
-          </Link>
+          <AccountLink />
           <a
             className="nav-wa"
             href={waLink("Halo Mas'ud, saya dari masudeltamamy.com")}

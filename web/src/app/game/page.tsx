@@ -9,9 +9,9 @@ import { pageMetadata } from "@/lib/seo";
 
 export async function generateMetadata() {
   return pageMetadata({
-    title: "Puzzle",
+    title: "Game Puzzle",
     description:
-      "Main sliding puzzle — mudah, sedang, sulit. Kumpulkan bintang, badge, dan rebut ranking mingguan.",
+      "Geser kotak sampai gambar utuh. Pilih mudah, sedang, atau sulit — rebut ranking mingguan.",
     path: "/game",
   });
 }

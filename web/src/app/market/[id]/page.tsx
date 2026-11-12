@@ -205,33 +205,42 @@ async function MarketDetail({ params }: Props) {
             </Link>
 
             <div className="detail__actions">
-              <OrderLink
-                className="btn btn-teal"
-                productId={product.id}
-                title={product.title}
-                priceLabel={product.price_label}
-                shippingMode={product.shipping_mode}
-                serviceArea={product.service_area}
-                kind={product.kind}
-              >
-                Order via WA
-              </OrderLink>
-              {showChat ? (
-                <ProductChatLink
-                  productId={product.id}
-                  loggedIn={canChat}
-                  className="btn btn-outline"
-                >
-                  Chat di app
-                </ProductChatLink>
+              {ownListing ? (
+                <>
+                  <Link className="btn btn-teal" href="/dashboard/chat">
+                    Kelola di akun
+                  </Link>
+                  <Link className="btn btn-outline" href="/market">
+                    Kembali ke Market
+                  </Link>
+                </>
               ) : (
-                <Link className="btn btn-outline" href="/dashboard/chat">
-                  Inbox chat
-                </Link>
+                <>
+                  <OrderLink
+                    className="btn btn-teal"
+                    productId={product.id}
+                    title={product.title}
+                    priceLabel={product.price_label}
+                    shippingMode={product.shipping_mode}
+                    serviceArea={product.service_area}
+                    kind={product.kind}
+                  >
+                    Order via WA
+                  </OrderLink>
+                  {showChat ? (
+                    <ProductChatLink
+                      productId={product.id}
+                      loggedIn={canChat}
+                      className="btn btn-outline"
+                    >
+                      Chat di app
+                    </ProductChatLink>
+                  ) : null}
+                  <Link className="btn btn-outline" href="/market">
+                    Kembali
+                  </Link>
+                </>
               )}
-              <Link className="btn btn-outline" href="/market">
-                Kembali
-              </Link>
               <ShareBar
                 title={product.title}
                 path={path}
@@ -321,36 +330,14 @@ async function MarketDetail({ params }: Props) {
           </section>
         ) : null}
 
-        {showChat ? (
-          <section className="detail__chat-cta" aria-label="Chat penjual">
-            <div>
-              <h2>Chat di app</h2>
-              <p>
-                Seperti chat marketplace: kirim pesan langsung ke penjual di app (realtime).
-                Order via WA tetap terpisah di tombol Order.
-              </p>
-            </div>
-            <ProductChatLink
-              productId={product.id}
-              loggedIn={canChat}
-              className="btn btn-teal"
-            >
-              Buka chat
-            </ProductChatLink>
+        {ownListing ? (
+          <section className="detail__owner-note" aria-label="Produk milikmu">
+            <p>
+              Ini produk kamu di etalase publik. Untuk balas chat atau ubah produk, buka{" "}
+              <Link href="/dashboard">mode akun</Link>.
+            </p>
           </section>
-        ) : (
-          <section className="detail__chat-cta" aria-label="Inbox chat penjual">
-            <div>
-              <h2>Ini produk kamu</h2>
-              <p>
-                Pembeli menghubungi lewat chat di item ini. Balas dari inbox dashboard.
-              </p>
-            </div>
-            <Link className="btn btn-teal" href="/dashboard/chat">
-              Buka inbox chat
-            </Link>
-          </section>
-        )}
+        ) : null}
 
         <ProductComments
           productId={product.id}

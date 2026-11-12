@@ -418,111 +418,119 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
       {phase === "pick" ? (
         <section className="pz-pick">
           <header className="pz-pick__head">
-            <p className="pz-pick__eyebrow">Game · Sliding Puzzle</p>
-            <h1>Susun & rebut ranking</h1>
-            <p>
-              Pilih level. Tiap tingkat punya gelar, badge, dan bonus gamifikasi sendiri.
-              {canSave
-                ? ` Login sebagai ${userName || "member"} — skor otomatis tersimpan ke ranking.`
-                : " Tanpa login boleh main, tapi skor tidak disimpan. Masuk dulu untuk ranking."}
-            </p>
+            <p className="pz-pick__eyebrow">Game</p>
+            <h1>Puzzle</h1>
+            <p>Geser kotak sampai rapi. Pilih level, lalu main.</p>
           </header>
 
-          <div className="pz-mode">
-            <span>Mode papan</span>
-            <div className="pz-mode__btns">
-              <button
-                type="button"
-                className={mode === "gambar" ? "is-active" : undefined}
-                onClick={() => setMode("gambar")}
-              >
-                Gambar
-              </button>
-              <button
-                type="button"
-                className={mode === "angka" ? "is-active" : undefined}
-                onClick={() => setMode("angka")}
-              >
-                Angka
-              </button>
+          <div className="pz-arena" aria-label="Pratinjau papan">
+            {mode === "gambar" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={puzzleImage.src} alt={puzzleImage.label} className="pz-arena__art" />
+            ) : (
+              <div className="pz-arena__numbers" aria-hidden="true">
+                {Array.from({ length: 9 }, (_, i) => (
+                  <span key={i} className={i === 8 ? "is-blank" : undefined}>
+                    {i === 8 ? "" : i + 1}
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="pz-arena__fade" aria-hidden="true" />
+            <div className="pz-arena__caption">
+              <strong>{mode === "gambar" ? puzzleImage.label : "Mode angka"}</strong>
+              <span>{canSave ? "Skor masuk ranking" : "Tamu · skor tidak disimpan"}</span>
             </div>
           </div>
 
+          <div className="pz-seg" role="group" aria-label="Mode papan">
+            <button
+              type="button"
+              className={mode === "gambar" ? "is-active" : undefined}
+              onClick={() => setMode("gambar")}
+            >
+              Gambar
+            </button>
+            <button
+              type="button"
+              className={mode === "angka" ? "is-active" : undefined}
+              onClick={() => setMode("angka")}
+            >
+              Angka
+            </button>
+          </div>
+
           {mode === "gambar" ? (
-            <div className="pz-gallery">
-              <div className="pz-gallery__head">
-                <div>
-                  <span>Pilih gambar</span>
-                  <p>Pemandangan, bunga, atau yang lucu — biar mainnya lebih hiburan.</p>
-                </div>
-                <button type="button" className="btn btn-outline btn-sm" onClick={shuffleImage}>
-                  Acak gambar
-                </button>
-              </div>
-              <div className="pz-gallery__themes" role="tablist" aria-label="Tema gambar">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={themeFilter === "semua"}
-                  className={themeFilter === "semua" ? "is-active" : undefined}
-                  onClick={() => setThemeFilter("semua")}
-                >
-                  Semua
-                </button>
-                {PUZZLE_IMAGE_THEMES.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={themeFilter === t.id}
-                    className={themeFilter === t.id ? "is-active" : undefined}
-                    onClick={() => setThemeFilter(t.id)}
-                  >
-                    {t.label}
-                  </button>
-                ))}
-              </div>
-              <div className="pz-gallery__grid">
+            <div className="pz-strip">
+              <div className="pz-strip__row" role="list">
                 {gallery.map((img) => (
                   <button
                     key={img.id}
                     type="button"
-                    className={`pz-gallery__item${imageId === img.id ? " is-active" : ""}`}
+                    role="listitem"
+                    className={`pz-strip__item${imageId === img.id ? " is-active" : ""}`}
                     onClick={() => setImageId(img.id)}
                     aria-pressed={imageId === img.id}
                     title={img.label}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.src} alt={img.label} loading="lazy" />
-                    <span>{img.label}</span>
+                    <img src={img.src} alt="" loading="lazy" />
                   </button>
                 ))}
+              </div>
+              <div className="pz-strip__tools">
+                <div className="pz-strip__themes" role="tablist" aria-label="Tema">
+                  <button
+                    type="button"
+                    className={themeFilter === "semua" ? "is-active" : undefined}
+                    onClick={() => setThemeFilter("semua")}
+                  >
+                    Semua
+                  </button>
+                  {PUZZLE_IMAGE_THEMES.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={themeFilter === t.id ? "is-active" : undefined}
+                      onClick={() => setThemeFilter(t.id)}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" className="pz-chip" onClick={shuffleImage}>
+                  Acak
+                </button>
               </div>
             </div>
           ) : null}
 
-          <div className="pz-levels">
+          <div className="pz-levels" role="list">
             {PUZZLE_LEVELS.map((lv) => (
-              <article key={lv.id} className="pz-level" style={{ "--pz-accent": lv.accent } as React.CSSProperties}>
-                <div className="pz-level__top">
+              <button
+                key={lv.id}
+                type="button"
+                role="listitem"
+                className="pz-level"
+                style={{ "--pz-accent": lv.accent } as React.CSSProperties}
+                onClick={() => start(lv.id)}
+              >
+                <span className="pz-level__grid">{lv.size}×{lv.size}</span>
+                <span className="pz-level__copy">
                   <strong>{lv.label}</strong>
-                  <span>
-                    {lv.size}×{lv.size}
-                  </span>
-                </div>
-                <h2>{lv.title}</h2>
-                <p>{lv.blurb}</p>
-                <ul>
-                  {lv.perks.map((p) => (
-                    <li key={p}>{p}</li>
-                  ))}
-                </ul>
-                <button type="button" className="btn btn-teal" onClick={() => start(lv.id)}>
-                  Main {lv.label}
-                </button>
-              </article>
+                  <small>{lv.blurb}</small>
+                </span>
+                <span className="pz-level__go">Main</span>
+              </button>
             ))}
           </div>
+
+          {!canSave ? (
+            <p className="pz-guest">
+              Main bebas tanpa akun.{" "}
+              <Link href={loginHref("/game")}>Masuk</Link> kalau mau masuk ranking.
+            </p>
+          ) : null}
 
           <Leaderboards boards={liveBoards} />
         </section>
@@ -530,43 +538,46 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
 
       {phase === "play" || phase === "won" ? (
         <section className="pz-play">
-          <div className="pz-play__bar">
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setPhase("pick")}>
-              Level
+          <div className="pz-hud">
+            <button type="button" className="pz-hud__back" onClick={() => setPhase("pick")} aria-label="Kembali">
+              ←
             </button>
-            <div className="pz-play__meta">
-              <span>{level.label}</span>
-              <span>{moves} langkah</span>
-              <span>{formatTime(seconds)}</span>
-              {streak > 0 ? <span>Streak {streak}h</span> : null}
+            <div className="pz-hud__stats">
+              <span>
+                <em>Level</em>
+                {level.label}
+              </span>
+              <span>
+                <em>Langkah</em>
+                {moves}
+              </span>
+              <span>
+                <em>Waktu</em>
+                {formatTime(seconds)}
+              </span>
             </div>
-            <div className="pz-play__tools">
+            <div className="pz-hud__tools">
               {level.id === "mudah" ? (
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
                   onClick={useHint}
                   disabled={hintLeft <= 0 || phase !== "play"}
+                  title="Hint"
                 >
-                  Hint ({hintLeft})
+                  Hint
                 </button>
               ) : null}
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={() => start(levelId)}
-                disabled={phase === "won"}
-              >
-                Acak ulang
+              <button type="button" onClick={() => start(levelId)} disabled={phase === "won"} title="Acak ulang">
+                Acak
               </button>
               {mode === "gambar" ? (
                 <button
                   type="button"
-                  className="btn btn-outline btn-sm"
                   onClick={() => start(levelId, pickRandomPuzzleImage(themeFilter).id)}
                   disabled={phase === "won"}
+                  title="Ganti gambar"
                 >
-                  Ganti gambar
+                  Gambar
                 </button>
               ) : null}
             </div>
@@ -655,25 +666,25 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
 
           {phase === "won" && result ? (
             <div className="pz-win">
-              <p className="pz-win__eyebrow">Kejutan selesai</p>
               <div className="pz-win__stars" aria-label={`${result.stars} bintang`}>
                 {starsLabel(result.stars)}
               </div>
-              <h2>{result.title}</h2>
-              <p>
-                Skor <strong>{result.score}</strong> · {moves} langkah · {formatTime(seconds)}
-                {streak > 1 ? ` · streak ${streak} hari` : ""}
+              <h2>Selesai!</h2>
+              <p className="pz-win__score">
+                <strong>{result.score}</strong>
+                <span>
+                  {moves} langkah · {formatTime(seconds)}
+                  {streak > 1 ? ` · streak ${streak}h` : ""}
+                </span>
               </p>
 
               <div className="pz-win__rank" aria-live="polite">
                 <strong>#{result.rank}</strong>
                 <div>
-                  <span>
-                    {result.provisional && canSave ? "Memperbarui ranking…" : "Peringkat minggu ini"}
-                  </span>
+                  <span>Ranking minggu ini</span>
                   <small>
-                    dari {result.total} pemain · level {level.label}
-                    {!canSave ? " (perkiraan — belum tersimpan)" : ""}
+                    {result.total} pemain · {level.label}
+                    {!canSave ? " · belum tersimpan" : result.provisional ? " · menyimpan…" : ""}
                   </small>
                 </div>
               </div>
@@ -690,36 +701,36 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
                 }}
               />
 
-              <ul className="pz-win__perks">
-                {level.perks.map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-              </ul>
               <div className="pz-win__actions">
                 <button
                   type="button"
                   className="btn btn-teal"
+                  onClick={() => start(levelId)}
+                >
+                  Main lagi
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
                   onClick={() => void shareStoryWa()}
                   disabled={shareBusy}
                 >
-                  {shareBusy ? "Menyiapkan…" : "Share Story WA"}
+                  {shareBusy ? "Menyiapkan…" : "Share WA"}
                 </button>
-                <a
-                  className="btn btn-outline"
-                  href={waLink(shareText(result.score, result.stars))}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Chat WA
-                </a>
                 {!canSave ? (
                   <Link className="btn btn-outline" href={loginHref("/game")}>
-                    Masuk agar skor tersimpan
+                    Masuk · simpan skor
                   </Link>
-                ) : null}
-                <button type="button" className="btn btn-outline" onClick={() => start(levelId)}>
-                  Main lagi
-                </button>
+                ) : (
+                  <a
+                    className="btn btn-outline"
+                    href={waLink(shareText(result.score, result.stars))}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Chat WA
+                  </a>
+                )}
               </div>
               {shareHint ? <p className="pz-win__hint">{shareHint}</p> : null}
               {saveMsg ? (
@@ -819,13 +830,15 @@ function Leaderboards({
 
   return (
     <section className="pz-boards" aria-label="Papan peringkat mingguan">
-      <h2>{focusLevel ? "Ranking level ini" : "Ranking minggu ini"}</h2>
+      <h2>{focusLevel ? "Ranking" : "Top minggu ini"}</h2>
       <div className={`pz-boards__grid${focusLevel ? " is-focus" : ""}`}>
         {levels.map((lv) => (
           <div key={lv.id} className="pz-board-card">
             <header>
               <strong>{lv.label}</strong>
-              <span>{lv.title}</span>
+              <span>
+                {lv.size}×{lv.size}
+              </span>
             </header>
             {boards[lv.id]?.length ? (
               <ol>
