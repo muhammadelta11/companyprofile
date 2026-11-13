@@ -44,19 +44,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
-    const run = () => {
-      if (process.env.NODE_ENV === "production") {
-        navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
-      } else {
-        navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
-      }
-    };
-    const ric = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1800));
-    const id = ric(run);
-    return () => {
-      if (window.cancelIdleCallback) window.cancelIdleCallback(id as number);
-      else window.clearTimeout(id as number);
-    };
+    // Production: register segera (butuh untuk Web Push). Dev: unregister biar cache tidak ganggu.
+    if (process.env.NODE_ENV === "production") {
+      void navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).catch(() => {});
+      return;
+    }
+    void navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
   }, []);
 
   useEffect(() => {

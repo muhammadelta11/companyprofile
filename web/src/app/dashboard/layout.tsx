@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { getChatUnreadTotal } from "@/lib/product-chat";
+import { PushSetup } from "@/components/dashboard/PushSetup";
 import { DashNav } from "./DashNav";
 
 export const metadata = { title: "Dashboard" };
@@ -14,7 +15,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Suspense fallback={<aside className="dash-side dash-side--loading" aria-hidden="true" />}>
         <DashSide />
       </Suspense>
-      <section className="dash-main">{children}</section>
+      <section className="dash-main">
+        <PushSetup />
+        {children}
+      </section>
     </div>
   );
 }

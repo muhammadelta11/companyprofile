@@ -2309,6 +2309,45 @@ html[data-intro="on"] body { overflow: hidden; }
   font-size: 0.72rem;
   font-weight: 700;
 }
+.push-setup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.85rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 0.85rem;
+  padding: 0.85rem 1rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(14, 165, 233, 0.08));
+  border: 1px solid rgba(15, 118, 110, 0.25);
+}
+.push-setup strong {
+  display: block;
+  font-size: 0.92rem;
+}
+.push-setup p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
+  max-width: 36rem;
+}
+.push-setup.is-on {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+.push-setup.is-warn {
+  background: #fff7ed;
+  border-color: rgba(234, 88, 12, 0.28);
+}
+.push-setup__msg {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: #065f46;
+}
+.push-setup__msg.is-error { color: #b91c1c; }
 .dash-side--mitra {
   background:
     linear-gradient(180deg, rgba(232, 239, 255, 0.7), #fff 32%),

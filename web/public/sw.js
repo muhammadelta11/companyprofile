@@ -1,5 +1,5 @@
 // Naikkan VERSION bila strategi cache berubah; cache versi lama dihapus saat activate.
-const VERSION = "v2-push";
+const VERSION = "v3-push";
 const STATIC_CACHE = `static-${VERSION}`;
 const PAGE_CACHE = `pages-${VERSION}`;
 const OFFLINE_URL = "/offline.html";

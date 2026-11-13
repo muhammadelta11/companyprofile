@@ -506,6 +506,44 @@ export async function getChatUnreadBadge() {
   return { count: await getChatUnreadTotal(user) };
 }
 
+/** Uji push ke perangkat user yang sedang login. */
+export async function sendTestPushToMe() {
+  if (!supabaseReady) return { error: "Database belum terhubung." };
+  const user = await getCurrentUser();
+  if (!user) return { error: "Masuk dulu." };
+
+  const { createAdminClient } = await import("@/lib/supabase/admin");
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return { error: "Kunci server Supabase belum siap." };
+  }
+  const { count, error } = await admin
+    .from("push_subscriptions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+  if (error) {
+    return {
+      error:
+        "Tabel push_subscriptions belum ada. Jalankan product-chat-notify.sql di Supabase.",
+    };
+  }
+  if (!count) {
+    return { error: "Belum ada perangkat terdaftar. Ketuk Aktifkan notifikasi dulu." };
+  }
+
+  const { sendPushToUser } = await import("@/lib/push");
+  await sendPushToUser(user.id, {
+    title: "Uji notifikasi",
+    body: `Halo ${user.name.split(" ")[0] || "kamu"} — push dari Mas'ud El-Tamamy aktif.`,
+    url: "/dashboard",
+    tag: "push-test",
+    badge: 1,
+  });
+  return { ok: true };
+}
+
 /** Catat buka halaman detail produk (untuk urutan terpopuler di Market). */
 export async function trackProductView(productId: string) {
   if (!supabaseReady || !isUuid(productId)) return;

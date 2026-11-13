@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { getChatUnreadBadge, savePushSubscription } from "@/app/actions";
+import { getChatUnreadBadge } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
+import { enableWebPush, pushSupported } from "@/lib/push-client";
 
 function setAppBadge(count: number) {
   try {
@@ -18,45 +19,9 @@ function setAppBadge(count: number) {
   }
 }
 
-function urlBase64ToUint8Array(base64String: string) {
-  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-  const raw = atob(base64);
-  const out = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i += 1) out[i] = raw.charCodeAt(i);
-  return out;
-}
-
-async function ensurePushSubscription() {
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
-  if (!publicKey) return false;
-  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-    return false;
-  }
-  if (Notification.permission !== "granted") return false;
-  const reg = await navigator.serviceWorker.ready;
-  const sub =
-    (await reg.pushManager.getSubscription()) ||
-    (await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(publicKey),
-    }));
-  const json = sub.toJSON();
-  if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return false;
-  const res = await savePushSubscription({
-    endpoint: json.endpoint,
-    keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
-    userAgent: navigator.userAgent,
-  });
-  return Boolean(res.ok);
-}
-
-/**
- * Sinkron unread → badge ikon PWA + opt-in Web Push (Android).
- * Angka di menu Chat tetap dari server (DashNav).
- */
+/** Sinkron unread → badge ikon PWA. Opt-in push ada di banner PushSetup. */
 export function ChatNotify({ initialCount = 0 }: { initialCount?: number }) {
-  const [pushState, setPushState] = useState<"idle" | "on" | "denied" | "unsupported">("idle");
+  const [needPush, setNeedPush] = useState(false);
 
   const refresh = useCallback(async () => {
     const res = await getChatUnreadBadge();
@@ -89,40 +54,26 @@ export function ChatNotify({ initialCount = 0 }: { initialCount?: number }) {
   }, [refresh]);
 
   useEffect(() => {
-    if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-      setPushState("unsupported");
-      return;
+    if (!pushSupported()) return;
+    if (Notification.permission === "default") setNeedPush(true);
+    else if (Notification.permission === "granted") {
+      void enableWebPush().then((res) => setNeedPush(!res.ok));
     }
-    if (Notification.permission === "denied") {
-      setPushState("denied");
-      return;
-    }
-    if (Notification.permission === "granted") {
-      void ensurePushSubscription().then((ok) => setPushState(ok ? "on" : "idle"));
-      return;
-    }
-    setPushState("idle");
   }, []);
 
-  async function enablePush() {
-    if (!("Notification" in window)) {
-      setPushState("unsupported");
-      return;
-    }
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      setPushState("denied");
-      return;
-    }
-    const ok = await ensurePushSubscription();
-    setPushState(ok ? "on" : "idle");
-  }
-
-  if (pushState === "unsupported" || pushState === "on") return null;
+  if (!needPush) return null;
 
   return (
-    <button type="button" className="dash-chat-notify__push" onClick={() => void enablePush()}>
-      {pushState === "denied" ? "Notifikasi diblokir" : "Aktifkan notif HP"}
+    <button
+      type="button"
+      className="dash-chat-notify__push"
+      onClick={() => {
+        void enableWebPush().then((res) => {
+          if (res.ok) setNeedPush(false);
+        });
+      }}
+    >
+      Aktifkan notif
     </button>
   );
 }
