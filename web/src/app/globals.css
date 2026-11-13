@@ -2641,6 +2641,97 @@ html[data-intro="on"] body { overflow: hidden; }
   }
 }
 
+/* Bottom nav konsol — HP saja */
+.dash-bnav {
+  display: none;
+}
+@media (max-width: 899px) {
+  .dash-shell,
+  .dash--app {
+    --dash-bnav-h: 4.15rem;
+  }
+  .dash-main {
+    padding-bottom: calc(var(--dash-bnav-h) + env(safe-area-inset-bottom) + 1.25rem);
+  }
+  .dash-bnav {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 42;
+    height: calc(var(--dash-bnav-h) + env(safe-area-inset-bottom));
+    padding: 0.3rem 0.2rem calc(0.3rem + env(safe-area-inset-bottom));
+    background: rgba(12, 18, 30, 0.96);
+    border-top: 1px solid var(--dash-line);
+    backdrop-filter: blur(12px);
+  }
+  .dash-bnav__item {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 0.12rem;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--dash-muted);
+    text-decoration: none;
+    font: inherit;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dash-bnav__pill {
+    position: relative;
+    width: 2.35rem;
+    height: 1.7rem;
+    display: grid;
+    place-items: center;
+    border-radius: 0.7rem;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .dash-bnav__label {
+    font-size: 0.62rem;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .dash-bnav__item.is-active {
+    color: #e8eef7;
+  }
+  .dash-bnav__item.is-active .dash-bnav__pill {
+    background: var(--dash-accent-soft);
+    color: var(--dash-accent);
+  }
+  .dash-bnav__item.is-active .dash-bnav__label {
+    font-weight: 800;
+    color: var(--dash-accent);
+  }
+  .dash-bnav__badge {
+    position: absolute;
+    top: -0.15rem;
+    right: -0.1rem;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.25rem;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.58rem;
+    font-style: normal;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+  .dash-toast {
+    bottom: calc(var(--dash-bnav-h) + env(safe-area-inset-bottom) + 0.85rem);
+  }
+}
+
 html.dash-menu-open body { overflow: hidden; }
 
 .dash-head { margin-bottom: 1rem; }
@@ -8238,14 +8329,18 @@ html.is-account-mode .delta-fab,
 html.is-account-mode .pwa-install {
   display: none !important;
 }
-html.is-account-mode .main-shell {
+html.is-account-mode .main-shell,
+html.is-account-mode .main-shell--account {
+  padding-top: 0;
   padding-bottom: 0;
 }
 html.is-account-mode body {
   --bnav-h: 0px;
+  padding-bottom: 0;
 }
 .main-shell--account {
   min-height: 100dvh;
+  padding-top: 0;
 }
 .detail__owner-note {
   margin-top: 0.75rem;

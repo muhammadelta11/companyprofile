@@ -150,6 +150,21 @@ export function DashNav({
     );
   }
 
+  const bottomTabs: { href: string; label: string; icon: IconName }[] = [
+    { href: "/dashboard", label: "Ringkasan", icon: "dashboard" },
+    { href: "/dashboard/pesanan", label: "Pesanan", icon: "bag" },
+    { href: "/dashboard/chat", label: "Chat", icon: "chat" },
+    role === "member"
+      ? { href: "/dashboard/profil", label: "Profil", icon: "user" }
+      : {
+          href: role === "admin" ? "/dashboard/produk?sumber=sendiri" : "/dashboard/produk",
+          label: "Produk",
+          icon: "grid",
+        },
+  ];
+
+  const bottomActive = bottomTabs.some((t) => isNavActive(t.href, path, searchParams));
+
   const nav = (
     <nav className="dash-nav dash-nav--groups" aria-label="Menu dashboard">
       {GROUPS.map((group) => {
@@ -256,6 +271,39 @@ export function DashNav({
           </form>
         </div>
       </aside>
+
+      <nav className="dash-bnav" aria-label="Menu bawah konsol">
+        {bottomTabs.map((t) => {
+          const active = isNavActive(t.href, path, searchParams);
+          const chatBadge = t.href === "/dashboard/chat" && unread > 0;
+          return (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={`dash-bnav__item${active ? " is-active" : ""}`}
+              aria-current={active ? "page" : undefined}
+            >
+              <span className="dash-bnav__pill">
+                <Icon name={t.icon} size={18} />
+                {chatBadge ? <em className="dash-bnav__badge">{unread > 9 ? "9+" : unread}</em> : null}
+              </span>
+              <span className="dash-bnav__label">{t.label}</span>
+            </Link>
+          );
+        })}
+        <button
+          type="button"
+          className={`dash-bnav__item${!bottomActive || menuOpen ? " is-active" : ""}`}
+          aria-label="Menu lainnya"
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span className="dash-bnav__pill">
+            <Icon name="grid" size={18} />
+          </span>
+          <span className="dash-bnav__label">Lainnya</span>
+        </button>
+      </nav>
 
       <DashToast />
     </>
