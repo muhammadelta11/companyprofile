@@ -8,44 +8,45 @@ import { signOut } from "../masuk/actions";
 import { AdminNotify } from "@/components/dashboard/AdminNotify";
 import { ChatNotify } from "@/components/dashboard/ChatNotify";
 import { DashToast } from "@/components/dashboard/DashToast";
+import { Icon, type IconName } from "@/components/Icon";
 
-type NavItem = { href: string; label: string; hint?: string; roles: Role[] };
+type NavItem = { href: string; label: string; icon: IconName; roles: Role[] };
 type NavGroup = { title: string; items: NavItem[] };
 
 const GROUPS: NavGroup[] = [
   {
     title: "Utama",
     items: [
-      { href: "/dashboard", label: "Ringkasan", roles: ["admin", "mitra", "member"] },
-      { href: "/dashboard/pesanan", label: "Pesanan", roles: ["admin", "mitra", "member"] },
-      { href: "/dashboard/chat", label: "Chat", roles: ["admin", "mitra", "member"] },
+      { href: "/dashboard", label: "Ringkasan", icon: "dashboard", roles: ["admin", "mitra", "member"] },
+      { href: "/dashboard/pesanan", label: "Pesanan", icon: "bag", roles: ["admin", "mitra", "member"] },
+      { href: "/dashboard/chat", label: "Chat", icon: "chat", roles: ["admin", "mitra", "member"] },
     ],
   },
   {
-    title: "Cek dulu",
+    title: "Operasional",
     items: [
-      { href: "/dashboard/produk?sumber=sendiri", label: "Produk sendiri", roles: ["admin"] },
-      { href: "/dashboard/produk?sumber=mitra", label: "Produk mitra", roles: ["admin"] },
-      { href: "/dashboard/produk", label: "Produk", roles: ["mitra"] },
-      { href: "/dashboard/pendaftar", label: "Pendaftar", roles: ["admin"] },
-      { href: "/dashboard/masukan", label: "Masukan", roles: ["admin"] },
-      { href: "/dashboard/jadi-mitra", label: "Jadi mitra", roles: ["member"] },
+      { href: "/dashboard/produk?sumber=sendiri", label: "Produk sendiri", icon: "grid", roles: ["admin"] },
+      { href: "/dashboard/produk?sumber=mitra", label: "Produk mitra", icon: "bag", roles: ["admin"] },
+      { href: "/dashboard/produk", label: "Produk", icon: "grid", roles: ["mitra"] },
+      { href: "/dashboard/pendaftar", label: "Pendaftar", icon: "userPlus", roles: ["admin"] },
+      { href: "/dashboard/masukan", label: "Masukan", icon: "mail", roles: ["admin"] },
+      { href: "/dashboard/jadi-mitra", label: "Jadi mitra", icon: "userPlus", roles: ["member"] },
     ],
   },
   {
-    title: "Website",
+    title: "Konten situs",
     items: [
-      { href: "/dashboard/layanan", label: "Layanan", roles: ["admin"] },
-      { href: "/dashboard/wisata", label: "Wisata", roles: ["admin"] },
-      { href: "/dashboard/proyek", label: "Proyek", roles: ["admin"] },
-      { href: "/dashboard/anggota", label: "Anggota", roles: ["admin"] },
-      { href: "/dashboard/tampilan", label: "Tampilan", roles: ["admin"] },
-      { href: "/dashboard/delta", label: "Delta", roles: ["admin"] },
+      { href: "/dashboard/layanan", label: "Layanan", icon: "code", roles: ["admin"] },
+      { href: "/dashboard/wisata", label: "Wisata", icon: "compass", roles: ["admin"] },
+      { href: "/dashboard/proyek", label: "Proyek", icon: "folder", roles: ["admin"] },
+      { href: "/dashboard/anggota", label: "Anggota", icon: "user", roles: ["admin"] },
+      { href: "/dashboard/tampilan", label: "Tampilan", icon: "spark", roles: ["admin"] },
+      { href: "/dashboard/delta", label: "Delta", icon: "spark", roles: ["admin"] },
     ],
   },
   {
     title: "Akun",
-    items: [{ href: "/dashboard/profil", label: "Profil", roles: ["admin", "mitra", "member"] }],
+    items: [{ href: "/dashboard/profil", label: "Profil", icon: "user", roles: ["admin", "mitra", "member"] }],
   },
 ];
 
@@ -118,6 +119,16 @@ export function DashNav({
 
   return (
     <aside className={`dash-side${role === "mitra" ? " dash-side--mitra" : ""}`}>
+      <div className="dash-brand">
+        <span className="dash-brand__mark" aria-hidden="true">
+          M
+        </span>
+        <div>
+          <strong>Konsol</strong>
+          <small>Mas&apos;ud El-Tamamy</small>
+        </div>
+      </div>
+
       <div className="dash-user">
         <span className="dash-avatar">{name.slice(0, 1).toUpperCase()}</span>
         <div>
@@ -128,21 +139,13 @@ export function DashNav({
               Etalase publik
             </Link>
           ) : null}
-          <Link href="/" className="dash-user__site">
-            ← Kembali ke situs
-          </Link>
         </div>
-        <ChatNotify initialCount={chatUnread} />
-        {role === "admin" ? <AdminNotify /> : null}
-        <form action={signOut} className="dash-side__logout">
-          <button className="dash-logout" type="submit">
-            Keluar
-          </button>
-        </form>
+        <div className="dash-user__tools">
+          <ChatNotify initialCount={chatUnread} />
+          {role === "admin" ? <AdminNotify /> : null}
+        </div>
       </div>
-      <p className="dash-mode-hint">Mode akun · kelola produk, chat, pesanan</p>
 
-      {/* Mobile: satu baris chip; Desktop: grup */}
       <nav className="dash-nav dash-nav--chips" aria-label="Menu cepat">
         {flat.map((l) => (
           <Link
@@ -150,6 +153,7 @@ export function DashNav({
             href={l.href}
             className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
           >
+            <Icon name={l.icon} size={16} />
             {labelFor(l.href, l.label)}
           </Link>
         ))}
@@ -171,6 +175,7 @@ export function DashNav({
                     href={l.href}
                     className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
                   >
+                    <Icon name={l.icon} size={16} />
                     {labelFor(l.href, l.label)}
                   </Link>
                 ))}
@@ -180,11 +185,16 @@ export function DashNav({
         })}
       </nav>
 
-      <form action={signOut} className="dash-side__logout-desk">
-        <button className="dash-logout" type="submit">
-          Keluar
-        </button>
-      </form>
+      <div className="dash-side__foot">
+        <Link href="/" className="dash-side__site">
+          ← Ke situs publik
+        </Link>
+        <form action={signOut}>
+          <button className="dash-logout" type="submit">
+            Keluar
+          </button>
+        </form>
+      </div>
 
       <DashToast />
     </aside>

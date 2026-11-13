@@ -52,13 +52,10 @@ async function AdminOverview() {
 
   return (
     <>
-      <DashHead
-        title="Ringkasan akun"
-        text="Mode akun — kelola pesanan, produk, chat, dan masukan. Loneng 🔔 di menu berbunyi kalau ada request baru."
-      />
+      <DashHead title="Ringkasan" text="Pantau antrean dan aktivitas terbaru." />
       {actions.length ? (
         <section className="dash-actions">
-          <h2 className="dash-sub">Perlu tindakan</h2>
+          <h2 className="dash-sub">Perlu ditindak</h2>
           <ul className="dash-actions__list">
             {actions.map((a) => (
               <li key={a.href}>
@@ -70,15 +67,15 @@ async function AdminOverview() {
           </ul>
         </section>
       ) : (
-        <p className="dash-notice">Tidak ada antrean mendesak. Bagus.</p>
+        <p className="dash-notice">Semua antrean bersih.</p>
       )}
       <div className="dash-stats">
-        <Stat href="/dashboard/pendaftar" value={apps.count ?? 0} label="Pendaftar baru" />
+        <Stat href="/dashboard/pendaftar" value={apps.count ?? 0} label="Pendaftar" />
         <Stat href="/dashboard/pesanan" value={orders.count ?? 0} label="Pesanan baru" />
-        <Stat href="/dashboard/produk?sumber=mitra" value={pendingProducts.count ?? 0} label="Produk mitra menunggu" />
-        <Stat href="/dashboard/anggota" value={pendingMitra.count ?? 0} label="Mitra menunggu" />
-        <Stat href="/dashboard/masukan" value={feedback.count ?? 0} label="Masukan baru" />
-        <Stat href="/dashboard/delta" value={questions.count ?? 0} label="Pertanyaan Delta (7 hari)" />
+        <Stat href="/dashboard/produk?sumber=mitra" value={pendingProducts.count ?? 0} label="Produk antre" />
+        <Stat href="/dashboard/anggota" value={pendingMitra.count ?? 0} label="Mitra antre" />
+        <Stat href="/dashboard/masukan" value={feedback.count ?? 0} label="Masukan" />
+        <Stat href="/dashboard/delta" value={questions.count ?? 0} label="Delta 7 hari" />
       </div>
     </>
   );

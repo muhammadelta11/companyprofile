@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { getChatUnreadBadge } from "@/app/actions";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import { enableWebPush, pushSupported } from "@/lib/push-client";
@@ -21,8 +21,6 @@ function setAppBadge(count: number) {
 
 /** Sinkron unread → badge ikon PWA. Opt-in push ada di banner PushSetup. */
 export function ChatNotify({ initialCount = 0 }: { initialCount?: number }) {
-  const [needPush, setNeedPush] = useState(false);
-
   const refresh = useCallback(async () => {
     const res = await getChatUnreadBadge();
     const next = res.count || 0;
@@ -55,25 +53,8 @@ export function ChatNotify({ initialCount = 0 }: { initialCount?: number }) {
 
   useEffect(() => {
     if (!pushSupported()) return;
-    if (Notification.permission === "default") setNeedPush(true);
-    else if (Notification.permission === "granted") {
-      void enableWebPush().then((res) => setNeedPush(!res.ok));
-    }
+    if (Notification.permission === "granted") void enableWebPush();
   }, []);
 
-  if (!needPush) return null;
-
-  return (
-    <button
-      type="button"
-      className="dash-chat-notify__push"
-      onClick={() => {
-        void enableWebPush().then((res) => {
-          if (res.ok) setNeedPush(false);
-        });
-      }}
-    >
-      Aktifkan notif
-    </button>
-  );
+  return null;
 }

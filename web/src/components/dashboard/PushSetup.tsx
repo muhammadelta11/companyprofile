@@ -100,11 +100,11 @@ export function PushSetup() {
     return (
       <aside className="push-setup is-on">
         <div>
-          <strong>Notifikasi HP aktif</strong>
-          <p>Chat, masukan, pendaftar, dan pesanan bisa muncul meski app ditutup.</p>
+          <strong>Notifikasi aktif</strong>
+          <p>Chat & laporan masuk tetap kebaca di luar app.</p>
         </div>
         <button type="button" className="btn btn-outline btn-sm" disabled={busy} onClick={() => void onTest()}>
-          {busy ? "Mengirim…" : "Uji notifikasi"}
+          {busy ? "…" : "Uji"}
         </button>
         {msg ? <p className="push-setup__msg">{msg}</p> : null}
       </aside>
@@ -114,11 +114,11 @@ export function PushSetup() {
   return (
     <aside className="push-setup">
       <div>
-        <strong>Aktifkan notifikasi HP</strong>
-        <p>Supaya chat & laporan masuk tetap kebaca meski lagi di luar app.</p>
+        <strong>Nyalakan notifikasi</strong>
+        <p>Dapatkan alert chat & laporan di HP.</p>
       </div>
       <button type="button" className="btn btn-teal btn-sm" disabled={busy} onClick={() => void onEnable()}>
-        {busy ? "Mengaktifkan…" : "Aktifkan sekarang"}
+        {busy ? "…" : "Aktifkan"}
       </button>
       {msg ? <p className="push-setup__msg is-error">{msg}</p> : null}
     </aside>
