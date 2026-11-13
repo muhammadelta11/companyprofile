@@ -12,7 +12,14 @@ export const instant = false;
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dash-shell dash--app">
-      <Suspense fallback={<aside className="dash-side dash-side--loading" aria-hidden="true" />}>
+      <Suspense
+        fallback={
+          <>
+            <header className="dash-top" aria-hidden="true" />
+            <aside className="dash-side dash-side--loading" aria-hidden="true" />
+          </>
+        }
+      >
         <DashSide />
       </Suspense>
       <section className="dash-main">

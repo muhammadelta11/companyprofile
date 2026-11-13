@@ -56,6 +56,23 @@ const ROLE_LABEL: Record<Role, string> = {
   member: "Member",
 };
 
+const PAGE_TITLE: Record<string, string> = {
+  "/dashboard": "Ringkasan",
+  "/dashboard/pesanan": "Pesanan",
+  "/dashboard/chat": "Chat",
+  "/dashboard/produk": "Produk",
+  "/dashboard/pendaftar": "Pendaftar",
+  "/dashboard/masukan": "Masukan",
+  "/dashboard/jadi-mitra": "Jadi mitra",
+  "/dashboard/layanan": "Layanan",
+  "/dashboard/wisata": "Wisata",
+  "/dashboard/proyek": "Proyek",
+  "/dashboard/anggota": "Anggota",
+  "/dashboard/tampilan": "Tampilan",
+  "/dashboard/delta": "Delta",
+  "/dashboard/profil": "Profil",
+};
+
 function isNavActive(href: string, path: string, searchParams: URLSearchParams) {
   const qIndex = href.indexOf("?");
   const hrefPath = qIndex >= 0 ? href.slice(0, qIndex) : href;
@@ -75,6 +92,12 @@ function isNavActive(href: string, path: string, searchParams: URLSearchParams) 
   return true;
 }
 
+function titleForPath(path: string) {
+  if (PAGE_TITLE[path]) return PAGE_TITLE[path];
+  const hit = Object.keys(PAGE_TITLE).find((k) => k !== "/dashboard" && path.startsWith(k));
+  return hit ? PAGE_TITLE[hit] : "Konsol";
+}
+
 export function DashNav({
   name,
   role,
@@ -91,8 +114,9 @@ export function DashNav({
   const path = usePathname();
   const searchParams = useSearchParams();
   const [unread, setUnread] = useState(chatUnread);
-  const flat = GROUPS.flatMap((g) => g.items.filter((i) => i.roles.includes(role)));
+  const [menuOpen, setMenuOpen] = useState(false);
   const subtitle = [ROLE_LABEL[role], city?.trim() || null].filter(Boolean).join(" · ");
+  const pageTitle = titleForPath(path);
 
   useEffect(() => {
     setUnread(chatUnread);
@@ -107,6 +131,15 @@ export function DashNav({
     return () => window.removeEventListener("chat-unread", onUnread);
   }, []);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [path, searchParams]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dash-menu-open", menuOpen);
+    return () => document.documentElement.classList.remove("dash-menu-open");
+  }, [menuOpen]);
+
   function labelFor(href: string, label: string) {
     if (href !== "/dashboard/chat" || unread <= 0) return label;
     return (
@@ -117,86 +150,114 @@ export function DashNav({
     );
   }
 
-  return (
-    <aside className={`dash-side${role === "mitra" ? " dash-side--mitra" : ""}`}>
-      <div className="dash-brand">
-        <span className="dash-brand__mark" aria-hidden="true">
-          M
-        </span>
-        <div>
-          <strong>Konsol</strong>
-          <small>Mas&apos;ud El-Tamamy</small>
-        </div>
-      </div>
+  const nav = (
+    <nav className="dash-nav dash-nav--groups" aria-label="Menu dashboard">
+      {GROUPS.map((group) => {
+        const items = group.items.filter((i) => i.roles.includes(role));
+        if (!items.length) return null;
+        return (
+          <div key={group.title} className="dash-nav__group">
+            <p className="dash-nav__title" aria-hidden="true">
+              {group.title}
+            </p>
+            <div className="dash-nav__links" role="group" aria-label={group.title}>
+              {items.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon name={l.icon} size={16} />
+                  {labelFor(l.href, l.label)}
+                </Link>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </nav>
+  );
 
-      <div className="dash-user">
-        <span className="dash-avatar">{name.slice(0, 1).toUpperCase()}</span>
-        <div>
-          <strong>{name}</strong>
+  return (
+    <>
+      <header className="dash-top">
+        <button
+          type="button"
+          className="dash-top__menu"
+          aria-label={menuOpen ? "Tutup menu" : "Buka menu"}
+          aria-expanded={menuOpen}
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <div className="dash-top__title">
+          <strong>{pageTitle}</strong>
           <small>{subtitle}</small>
-          {storeHref ? (
-            <Link href={storeHref} className="dash-user__store">
-              Etalase publik
-            </Link>
-          ) : null}
         </div>
-        <div className="dash-user__tools">
+        <div className="dash-top__actions">
           <ChatNotify initialCount={chatUnread} />
           {role === "admin" ? <AdminNotify /> : null}
-        </div>
-      </div>
-
-      <nav className="dash-nav dash-nav--chips" aria-label="Menu cepat">
-        {flat.map((l) => (
-          <Link
-            key={`m-${l.href}`}
-            href={l.href}
-            className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
-          >
-            <Icon name={l.icon} size={16} />
-            {labelFor(l.href, l.label)}
+          <Link href="/" className="dash-top__site" title="Ke situs publik">
+            Situs
           </Link>
-        ))}
-      </nav>
+          <form action={signOut}>
+            <button className="dash-top__out" type="submit">
+              Keluar
+            </button>
+          </form>
+        </div>
+      </header>
 
-      <nav className="dash-nav dash-nav--groups" aria-label="Menu dashboard">
-        {GROUPS.map((group) => {
-          const items = group.items.filter((i) => i.roles.includes(role));
-          if (!items.length) return null;
-          return (
-            <div key={group.title} className="dash-nav__group">
-              <p className="dash-nav__title" aria-hidden="true">
-                {group.title}
-              </p>
-              <div className="dash-nav__links" role="group" aria-label={group.title}>
-                {items.map((l) => (
-                  <Link
-                    key={l.href}
-                    href={l.href}
-                    className={isNavActive(l.href, path, searchParams) ? "is-active" : undefined}
-                  >
-                    <Icon name={l.icon} size={16} />
-                    {labelFor(l.href, l.label)}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </nav>
+      <button
+        type="button"
+        className="dash-side__backdrop"
+        aria-label="Tutup menu"
+        hidden={!menuOpen}
+        onClick={() => setMenuOpen(false)}
+      />
 
-      <div className="dash-side__foot">
-        <Link href="/" className="dash-side__site">
-          ← Ke situs publik
-        </Link>
-        <form action={signOut}>
-          <button className="dash-logout" type="submit">
-            Keluar
-          </button>
-        </form>
-      </div>
+      <aside className={`dash-side${role === "mitra" ? " dash-side--mitra" : ""}${menuOpen ? " is-open" : ""}`}>
+        <div className="dash-brand">
+          <span className="dash-brand__mark" aria-hidden="true">
+            M
+          </span>
+          <div>
+            <strong>Konsol</strong>
+            <small>Mas&apos;ud El-Tamamy</small>
+          </div>
+        </div>
+
+        <div className="dash-user">
+          <span className="dash-avatar">{name.slice(0, 1).toUpperCase()}</span>
+          <div>
+            <strong>{name}</strong>
+            <small>{subtitle}</small>
+            {storeHref ? (
+              <Link href={storeHref} className="dash-user__store" onClick={() => setMenuOpen(false)}>
+                Etalase publik
+              </Link>
+            ) : null}
+          </div>
+        </div>
+
+        {nav}
+
+        <div className="dash-side__foot">
+          <Link href="/" className="dash-side__site" onClick={() => setMenuOpen(false)}>
+            ← Ke situs publik
+          </Link>
+          <form action={signOut}>
+            <button className="dash-logout" type="submit">
+              Keluar
+            </button>
+          </form>
+        </div>
+      </aside>
 
       <DashToast />
-    </aside>
+    </>
   );
 }
