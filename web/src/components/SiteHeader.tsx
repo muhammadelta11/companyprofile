@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/layanan", label: "Layanan" },
   { href: "/market", label: "Market" },
   { href: "/wisata", label: "Wisata" },
+  { href: "/belajar", label: "Belajar" },
   { href: "/game", label: "Game" },
   { href: "/proyek", label: "Proyek" },
   { href: "/tentang", label: "Tentang" },
@@ -22,9 +23,8 @@ export function SiteHeader({ onOpenDelta }: { onOpenDelta?: () => void }) {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <Link href="/" className="brand">
-          <strong>{SITE.brand}</strong>
-          <span className="brand-pill">{SITE.tagline}</span>
+        <Link href="/" className="brand brand--logo" aria-label={SITE.brand}>
+          <img src="/icon.svg" alt="" width={36} height={36} className="brand__mark" />
         </Link>
 
         <nav className="nav-links" aria-label="Utama">

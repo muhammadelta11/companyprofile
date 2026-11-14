@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { HeroTone } from "@/lib/site-settings";
 
-type Tone = HeroTone | "detail";
+type Tone = HeroTone | "detail" | "teal" | "blue";
 
 type HeroProps = {
   eyebrow: string;

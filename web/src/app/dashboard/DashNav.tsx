@@ -41,6 +41,7 @@ const GROUPS: NavGroup[] = [
       { href: "/dashboard/proyek", label: "Proyek", icon: "folder", roles: ["admin"] },
       { href: "/dashboard/anggota", label: "Anggota", icon: "user", roles: ["admin"] },
       { href: "/dashboard/tampilan", label: "Tampilan", icon: "spark", roles: ["admin"] },
+      { href: "/dashboard/belajar", label: "Belajar", icon: "code", roles: ["admin"] },
       { href: "/dashboard/delta", label: "Delta", icon: "spark", roles: ["admin"] },
     ],
   },
@@ -69,6 +70,7 @@ const PAGE_TITLE: Record<string, string> = {
   "/dashboard/proyek": "Proyek",
   "/dashboard/anggota": "Anggota",
   "/dashboard/tampilan": "Tampilan",
+  "/dashboard/belajar": "Belajar",
   "/dashboard/delta": "Delta",
   "/dashboard/profil": "Profil",
 };
