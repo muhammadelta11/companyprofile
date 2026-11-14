@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendProductChatMessage } from "@/app/actions";
+import { ChatReceipt } from "@/components/chat/ChatReceipt";
 import { useProductChatRealtime } from "@/hooks/useProductChatRealtime";
 import type { ProductChatMessage } from "@/lib/product-chat";
 
@@ -111,7 +112,10 @@ export function DashChatThread({
           messages.map((m) => (
             <div key={m.id} className={`dash-chat__bubble${m.mine ? " is-mine" : ""}`}>
               <p>{m.body}</p>
-              <time dateTime={m.created_at}>{formatWhen(m.created_at)}</time>
+              <time dateTime={m.created_at}>
+                {formatWhen(m.created_at)}
+                {m.mine ? <ChatReceipt receipt={m.receipt} /> : null}
+              </time>
             </div>
           ))
         ) : (

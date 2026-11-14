@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
-import type { ProductChatMessage } from "@/lib/product-chat";
+import {
+  peerLastReadFromThread,
+  withMessageReceipts,
+  type ProductChatMessage,
+} from "@/lib/product-chat";
 
 type Options = {
   threadId: string | null;
@@ -41,15 +45,35 @@ export function useProductChatRealtime({
   otherName = "Lawan bicara",
 }: Options) {
   const [messages, setMessages] = useState(() => mergeMessages([], initial));
+  const [peerLastReadAt, setPeerLastReadAt] = useState<string | null>(null);
+  const peerReadRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    peerReadRef.current = peerLastReadAt;
+  }, [peerLastReadAt]);
 
   useEffect(() => {
     setMessages((prev) => mergeMessages(prev, initial));
   }, [threadId, initial]);
 
   useEffect(() => {
+    setMessages((prev) => withMessageReceipts(prev, peerLastReadAt));
+  }, [peerLastReadAt]);
+
+  useEffect(() => {
     if (!threadId || !userId) return;
     const supabase = createBrowserSupabase();
     if (!supabase) return;
+
+    void supabase
+      .from("product_threads")
+      .select("buyer_id, buyer_last_read_at, seller_last_read_at")
+      .eq("id", threadId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        setPeerLastReadAt(peerLastReadFromThread(userId, data));
+      });
 
     const channel = supabase
       .channel(`product-chat:${threadId}`)
@@ -71,6 +95,7 @@ export function useProductChatRealtime({
           if (!row.id || !row.sender_id) return;
           const senderId = String(row.sender_id);
           const mine = senderId === userId;
+          const created = String(row.created_at ?? new Date().toISOString());
 
           setMessages((prev) => {
             if (prev.some((m) => m.id === row.id)) return prev;
@@ -85,18 +110,46 @@ export function useProductChatRealtime({
                 )
               : prev;
             const known = withoutTemp.find((m) => m.sender_id === senderId);
-            return sortMessages([
-              ...withoutTemp,
-              {
-                id: String(row.id),
-                body: String(row.body ?? ""),
-                created_at: String(row.created_at ?? new Date().toISOString()),
-                sender_id: senderId,
-                sender_name: mine ? "Kamu" : known?.sender_name || otherName,
-                mine,
-              },
-            ]);
+            return withMessageReceipts(
+              sortMessages([
+                ...withoutTemp,
+                {
+                  id: String(row.id),
+                  body: String(row.body ?? ""),
+                  created_at: created,
+                  sender_id: senderId,
+                  sender_name: mine ? "Kamu" : known?.sender_name || otherName,
+                  mine,
+                  receipt: mine ? "sent" : undefined,
+                },
+              ]),
+              peerReadRef.current
+            );
           });
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "product_threads",
+          filter: `id=eq.${threadId}`,
+        },
+        (payload) => {
+          const row = payload.new as {
+            buyer_id?: string;
+            buyer_last_read_at?: string | null;
+            seller_last_read_at?: string | null;
+          };
+          if (!row.buyer_id) return;
+          setPeerLastReadAt(
+            peerLastReadFromThread(userId, {
+              buyer_id: row.buyer_id,
+              buyer_last_read_at: row.buyer_last_read_at,
+              seller_last_read_at: row.seller_last_read_at,
+            })
+          );
         }
       )
       .subscribe();
@@ -116,13 +169,13 @@ export function useProductChatRealtime({
         sender_id: userId,
         sender_name: "Kamu",
         mine: true,
+        receipt: "sending",
       };
       setMessages((prev) => [...prev, temp]);
     },
     [userId]
   );
 
-  /** Ganti temp-* dengan pesan server (penting saat thread baru — realtime sering kelewatan INSERT). */
   const confirmOptimistic = useCallback(
     (body: string, confirmed: { id: string; created_at?: string }) => {
       if (!userId) return;
@@ -130,18 +183,24 @@ export function useProductChatRealtime({
         const withoutTemp = prev.filter(
           (m) => !(m.id.startsWith("temp-") && m.mine && m.body === body)
         );
-        if (withoutTemp.some((m) => m.id === confirmed.id)) return withoutTemp;
-        return sortMessages([
-          ...withoutTemp,
-          {
-            id: confirmed.id,
-            body,
-            created_at: confirmed.created_at ?? new Date().toISOString(),
-            sender_id: userId,
-            sender_name: "Kamu",
-            mine: true,
-          },
-        ]);
+        if (withoutTemp.some((m) => m.id === confirmed.id)) {
+          return withMessageReceipts(withoutTemp, peerReadRef.current);
+        }
+        return withMessageReceipts(
+          sortMessages([
+            ...withoutTemp,
+            {
+              id: confirmed.id,
+              body,
+              created_at: confirmed.created_at ?? new Date().toISOString(),
+              sender_id: userId,
+              sender_name: "Kamu",
+              mine: true,
+              receipt: "sent",
+            },
+          ]),
+          peerReadRef.current
+        );
       });
     },
     [userId]

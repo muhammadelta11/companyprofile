@@ -8,6 +8,7 @@ import {
   markProductChatRead,
   sendProductChatMessage,
 } from "@/app/actions";
+import { ChatReceipt } from "@/components/chat/ChatReceipt";
 import { useProductChatRealtime } from "@/hooks/useProductChatRealtime";
 import { loginHref } from "@/lib/access-policy";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
@@ -287,7 +288,10 @@ function MessageList({
       {messages.map((m) => (
         <div key={m.id} className={`mk-chat__bubble${m.mine ? " is-mine" : ""}`}>
           <p>{m.body}</p>
-          <time dateTime={m.created_at}>{formatWhen(m.created_at)}</time>
+          <time dateTime={m.created_at}>
+            {formatWhen(m.created_at)}
+            {m.mine ? <ChatReceipt receipt={m.receipt} /> : null}
+          </time>
         </div>
       ))}
     </div>

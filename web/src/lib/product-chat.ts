@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseReady } from "@/lib/supabase/env";
 import type { CurrentUser } from "@/lib/auth";
 
+export type ProductChatReceipt = "sending" | "sent" | "read";
+
 export type ProductChatMessage = {
   id: string;
   body: string;
@@ -9,6 +11,8 @@ export type ProductChatMessage = {
   sender_id: string;
   sender_name: string;
   mine: boolean;
+  /** Status baca untuk pesan sendiri (centang WhatsApp-style). */
+  receipt?: ProductChatReceipt;
 };
 
 export type ProductChatThread = {
@@ -25,7 +29,7 @@ export type ProductChatThread = {
 };
 
 const THREAD_COLS =
-  "id, product_id, buyer_id, seller_id, last_message_at, created_at, buyer_unread, seller_unread";
+  "id, product_id, buyer_id, seller_id, last_message_at, created_at, buyer_unread, seller_unread, buyer_last_read_at, seller_last_read_at";
 
 function myUnreadForThread(
   userId: string,
@@ -35,6 +39,36 @@ function myUnreadForThread(
   const buyerUnread = Number(row.buyer_unread ?? 0) || 0;
   const sellerUnread = Number(row.seller_unread ?? 0) || 0;
   return buyerId === userId ? buyerUnread : sellerUnread;
+}
+
+/** last_read lawan bicara → receipt untuk pesan sendiri. */
+export function withMessageReceipts(
+  messages: ProductChatMessage[],
+  peerLastReadAt: string | null | undefined
+): ProductChatMessage[] {
+  const peerTs = peerLastReadAt ? Date.parse(peerLastReadAt) : NaN;
+  return messages.map((m) => {
+    if (!m.mine) return { ...m, receipt: undefined };
+    if (m.id.startsWith("temp-")) return { ...m, receipt: "sending" };
+    if (Number.isFinite(peerTs) && Date.parse(m.created_at) <= peerTs) {
+      return { ...m, receipt: "read" };
+    }
+    return { ...m, receipt: "sent" };
+  });
+}
+
+export function peerLastReadFromThread(
+  viewerId: string,
+  thread: {
+    buyer_id: unknown;
+    buyer_last_read_at?: unknown;
+    seller_last_read_at?: unknown;
+  } | null
+): string | null {
+  if (!thread) return null;
+  const iAmBuyer = String(thread.buyer_id) === viewerId;
+  const raw = iAmBuyer ? thread.seller_last_read_at : thread.buyer_last_read_at;
+  return raw ? String(raw) : null;
 }
 
 export function isProductSeller(user: CurrentUser, productOwnerId: string | null) {
@@ -118,18 +152,27 @@ export async function getThreadMessages(
 ): Promise<ProductChatMessage[]> {
   if (!supabaseReady) return [];
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("product_messages")
-    .select(
-      "id, body, created_at, sender_id, sender:profiles!product_messages_sender_id_fkey(full_name)"
-    )
-    .eq("thread_id", threadId)
-    .order("created_at", { ascending: true })
-    .limit(200);
+
+  const [{ data: thread }, { data, error }] = await Promise.all([
+    supabase
+      .from("product_threads")
+      .select("buyer_id, seller_id, buyer_last_read_at, seller_last_read_at")
+      .eq("id", threadId)
+      .maybeSingle(),
+    supabase
+      .from("product_messages")
+      .select(
+        "id, body, created_at, sender_id, sender:profiles!product_messages_sender_id_fkey(full_name)"
+      )
+      .eq("thread_id", threadId)
+      .order("created_at", { ascending: true })
+      .limit(200),
+  ]);
 
   if (error || !data) return [];
 
-  return data.map((row) => {
+  const peerLastReadAt = peerLastReadFromThread(viewerId, thread);
+  const mapped = data.map((row) => {
     const sender = row.sender as { full_name?: string | null } | null;
     const senderId = String(row.sender_id);
     return {
@@ -141,6 +184,7 @@ export async function getThreadMessages(
       mine: senderId === viewerId,
     };
   });
+  return withMessageReceipts(mapped, peerLastReadAt);
 }
 
 export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThread[]> {
@@ -163,7 +207,7 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
   // admin: RLS already limits; can see all via is_admin
 
   let { data, error } = await query;
-  // Fallback jika product-chat-notify.sql belum dijalankan (kolom unread belum ada).
+  // Fallback jika product-chat-notify.sql belum dijalankan (kolom unread/read belum ada).
   if (error) {
     let fallback = supabase
       .from("product_threads")

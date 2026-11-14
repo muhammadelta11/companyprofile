@@ -7475,11 +7475,36 @@ a.pj-card:hover { transform: translateY(-3px); }
   color: #0f172a;
 }
 .dash-chat__bubble time {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
   margin-top: 0.2rem;
   font-size: 0.62rem;
   color: #64748b;
   text-align: right;
+}
+.mk-chat__bubble time {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+}
+.chat-receipt {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+.chat-receipt--sending {
+  color: #94a3b8;
+  letter-spacing: 0;
+}
+.chat-receipt--sent {
+  color: #64748b;
+}
+.chat-receipt--read {
+  color: #0284c7;
 }
 .dash-chat__form {
   display: grid;
