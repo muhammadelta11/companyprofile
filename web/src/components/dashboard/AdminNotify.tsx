@@ -170,6 +170,21 @@ export function AdminNotify() {
       )
       .on(
         "postgres_changes",
+        { event: "INSERT", schema: "public", table: "product_messages" },
+        (payload) => {
+          const row = payload.new as { id?: string; body?: string; thread_id?: string };
+          if (!row.id) return;
+          const preview = (row.body ?? "").trim().slice(0, 48);
+          push({
+            id: `chat-${row.id}`,
+            title: `Chat masuk: ${preview || "pesan baru"}${preview.length >= 48 ? "…" : ""}`,
+            href: row.thread_id ? `/dashboard/chat?id=${row.thread_id}` : "/dashboard/chat",
+            at: Date.now(),
+          });
+        }
+      )
+      .on(
+        "postgres_changes",
         { event: "UPDATE", schema: "public", table: "profiles" },
         (payload) => {
           const row = payload.new as {

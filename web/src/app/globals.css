@@ -7252,6 +7252,15 @@ a.pj-card:hover { transform: translateY(-3px); }
   border-right: 1px solid rgba(15, 23, 42, 0.08);
   background: #f8fafc;
 }
+.dash-chat__list-head {
+  margin: 0;
+  padding: 0.7rem 0.85rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
 .dash-chat__item {
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -8213,6 +8222,11 @@ html.is-account-mode body {
   z-index: 40;
   width: min(18.5rem, 78vw);
   padding: 0.65rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #fff;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.18);
+  color: #0f172a;
   border-radius: 0.9rem;
   border: 1px solid var(--line);
   background: #fff;
@@ -8257,6 +8271,24 @@ html.is-account-mode body {
   margin: 0.35rem 0 0;
   font-size: 0.75rem;
   color: var(--muted);
+}
+.dash-bell__cta {
+  display: block;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.65rem;
+  background: var(--teal-soft);
+  color: var(--teal-deep);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+.dash-bell__cta:hover {
+  background: rgba(15, 118, 110, 0.18);
+}
+.dash-bell--chat .dash-bell__panel {
+  color: var(--ink);
 }
 .dash-toast {
   position: fixed;

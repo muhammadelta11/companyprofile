@@ -217,8 +217,26 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
 /** Total pesan belum dibaca untuk badge navigasi / ikon PWA. */
 export async function getChatUnreadTotal(user: CurrentUser): Promise<number> {
   if (!supabaseReady) return 0;
-  const threads = await getInboxThreads(user);
-  return threads.reduce((sum, t) => sum + (t.unread ?? 0), 0);
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("product_threads")
+    .select("buyer_id, buyer_unread, seller_unread")
+    .limit(100);
+
+  if (user.role === "member") {
+    query = query.eq("buyer_id", user.id);
+  } else if (user.role === "mitra") {
+    query = query.or(`seller_id.eq.${user.id},buyer_id.eq.${user.id}`);
+  }
+
+  const { data, error } = await query;
+  if (error || !data) {
+    // Kolom unread belum ada / RLS — fallback aman.
+    return 0;
+  }
+
+  return data.reduce((sum, row) => sum + myUnreadForThread(user.id, row), 0);
 }
 
 /** Tandai thread sudah dibaca untuk peran viewer (pembeli/penjual). */
