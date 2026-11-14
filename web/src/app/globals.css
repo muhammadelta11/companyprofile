@@ -2247,17 +2247,17 @@ html[data-intro="on"] body { overflow: hidden; }
 
 .join-roles--two { grid-template-columns: 1fr 1fr; }
 
-/* Dashboard / Konsol — header atas + sidebar samping */
+/* Dashboard / Konsol — tema terang konsisten (satu nuansa) */
 .dash-shell,
 .dash {
-  --dash-ink: #e8eef7;
-  --dash-muted: #93a4bb;
-  --dash-panel: #121a26;
-  --dash-panel-2: #182232;
-  --dash-line: rgba(232, 238, 247, 0.1);
-  --dash-accent: #2dd4bf;
-  --dash-accent-soft: rgba(45, 212, 191, 0.14);
-  --dash-surface: #f4f7fb;
+  --dash-ink: #0f172a;
+  --dash-muted: #64748b;
+  --dash-panel: #ffffff;
+  --dash-panel-2: #f8fafc;
+  --dash-line: rgba(15, 23, 42, 0.1);
+  --dash-accent: #0f766e;
+  --dash-accent-soft: rgba(15, 118, 110, 0.12);
+  --dash-surface: #f1f5f9;
   --dash-card: #ffffff;
   --dash-side-w: 16.5rem;
   --dash-top-h: 3.6rem;
@@ -2269,7 +2269,7 @@ html[data-intro="on"] body { overflow: hidden; }
   grid-template-areas:
     "top"
     "main";
-  background: #0b1220;
+  background: var(--dash-surface);
   color: var(--dash-ink);
 }
 
@@ -2301,16 +2301,17 @@ html[data-intro="on"] body { overflow: hidden; }
   gap: 0.65rem;
   min-height: var(--dash-top-h);
   padding: 0.55rem 0.9rem;
-  background: rgba(16, 24, 38, 0.92);
+  background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid var(--dash-line);
   backdrop-filter: blur(10px);
+  color: var(--dash-ink);
 }
 .dash-top__menu {
   width: 2.35rem;
   height: 2.35rem;
   border: 1px solid var(--dash-line);
   border-radius: 0.7rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--dash-panel-2);
   display: grid;
   place-content: center;
   gap: 0.22rem;
@@ -2322,7 +2323,7 @@ html[data-intro="on"] body { overflow: hidden; }
   width: 1rem;
   height: 2px;
   border-radius: 2px;
-  background: #e8eef7;
+  background: #0f172a;
 }
 @media (min-width: 900px) {
   .dash-top__menu { display: none; }
@@ -2354,7 +2355,7 @@ html[data-intro="on"] body { overflow: hidden; }
 .dash-top__out {
   border: 1px solid var(--dash-line);
   border-radius: 0.65rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: #fff;
   color: var(--dash-muted);
   font: inherit;
   font-size: 0.74rem;
@@ -2365,8 +2366,8 @@ html[data-intro="on"] body { overflow: hidden; }
 }
 .dash-top__site:hover,
 .dash-top__out:hover {
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--dash-ink);
+  border-color: rgba(15, 23, 42, 0.2);
 }
 @media (max-width: 899px) {
   /* Aksi penuh ada di drawer — header tetap longgar */
@@ -2381,7 +2382,7 @@ html[data-intro="on"] body { overflow: hidden; }
   inset: 0;
   z-index: 45;
   border: 0;
-  background: rgba(2, 8, 18, 0.55);
+  background: rgba(15, 23, 42, 0.35);
   cursor: pointer;
 }
 .dash-side__backdrop[hidden] { display: none !important; }
@@ -2404,13 +2405,15 @@ html[data-intro="on"] body { overflow: hidden; }
   gap: 0.85rem;
   align-content: start;
   padding: 1rem 0.9rem 1.15rem;
-  background: linear-gradient(180deg, #101826, #0d1522);
+  background: #fff;
   border-right: 1px solid var(--dash-line);
+  box-shadow: 8px 0 28px rgba(15, 23, 42, 0.08);
   transform: translateX(-105%);
   transition: transform 0.22s ease;
   overflow-y: auto;
   visibility: hidden;
   pointer-events: none;
+  color: var(--dash-ink);
 }
 .dash-side.is-open {
   transform: translateX(0);
@@ -2429,12 +2432,13 @@ html[data-intro="on"] body { overflow: hidden; }
     visibility: visible;
     pointer-events: auto;
     z-index: 30;
+    box-shadow: none;
   }
 }
 
 .dash-side--loading {
   min-height: 8rem;
-  background: linear-gradient(90deg, #101826, #182232, #101826);
+  background: linear-gradient(90deg, #f1f5f9, #fff, #f1f5f9);
 }
 
 .dash-brand {
@@ -2469,7 +2473,7 @@ html[data-intro="on"] body { overflow: hidden; }
   gap: 0.65rem;
   padding: 0.7rem;
   border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--dash-panel-2);
   border: 1px solid var(--dash-line);
 }
 .dash-user > div { display: grid; flex: 1; min-width: 0; }
@@ -2552,14 +2556,14 @@ html[data-intro="on"] body { overflow: hidden; }
   border-radius: 0.75rem;
   font-size: 0.86rem;
   font-weight: 650;
-  color: var(--dash-ink);
+  color: #334155;
   text-decoration: none;
 }
 .dash-nav a .icon { opacity: 0.85; flex: none; }
-.dash-nav a:hover { background: rgba(255, 255, 255, 0.06); }
+.dash-nav a:hover { background: rgba(15, 23, 42, 0.04); color: var(--dash-ink); }
 .dash-nav a.is-active {
   background: var(--dash-accent-soft);
-  color: #5eead4;
+  color: var(--dash-accent);
 }
 
 .dash-nav--groups {
@@ -2612,7 +2616,7 @@ html[data-intro="on"] body { overflow: hidden; }
   padding: 0.55rem 0.75rem;
   border: 1px solid var(--dash-line);
   border-radius: 0.75rem;
-  background: transparent;
+  background: #fff;
   color: var(--dash-muted);
   font: inherit;
   font-size: 0.8rem;
@@ -2620,8 +2624,9 @@ html[data-intro="on"] body { overflow: hidden; }
   cursor: pointer;
 }
 .dash-logout:hover {
-  color: #fecaca;
-  border-color: rgba(248, 113, 113, 0.35);
+  color: #b91c1c;
+  border-color: rgba(185, 28, 28, 0.28);
+  background: #fef2f2;
 }
 
 .dash-main {
@@ -2629,9 +2634,8 @@ html[data-intro="on"] body { overflow: hidden; }
   min-width: 0;
   min-height: 0;
   padding: 1rem 0.9rem 2.5rem;
-  background:
-    linear-gradient(180deg, rgba(244, 247, 251, 0.98), #eef3f9 40%, #e8eef6);
-  color: #0b1220;
+  background: var(--dash-surface);
+  color: var(--dash-ink);
   overflow-x: clip;
 }
 
@@ -2663,9 +2667,10 @@ html[data-intro="on"] body { overflow: hidden; }
     z-index: 42;
     height: calc(var(--dash-bnav-h) + env(safe-area-inset-bottom));
     padding: 0.3rem 0.2rem calc(0.3rem + env(safe-area-inset-bottom));
-    background: rgba(12, 18, 30, 0.96);
+    background: rgba(255, 255, 255, 0.96);
     border-top: 1px solid var(--dash-line);
     backdrop-filter: blur(12px);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
   }
   .dash-bnav__item {
     display: grid;
@@ -2675,7 +2680,7 @@ html[data-intro="on"] body { overflow: hidden; }
     min-width: 0;
     border: 0;
     background: transparent;
-    color: var(--dash-muted);
+    color: #64748b;
     text-decoration: none;
     font: inherit;
     cursor: pointer;
@@ -2700,7 +2705,7 @@ html[data-intro="on"] body { overflow: hidden; }
     max-width: 100%;
   }
   .dash-bnav__item.is-active {
-    color: #e8eef7;
+    color: var(--dash-ink);
   }
   .dash-bnav__item.is-active .dash-bnav__pill {
     background: var(--dash-accent-soft);
@@ -7546,32 +7551,29 @@ a.pj-card:hover { transform: translateY(-3px); }
   cursor: not-allowed;
 }
 
-/* HP: chat full-bleed, tanpa kartu mengambang / tumpang tindih bottom nav */
+/* HP: chat full-bleed; bottom nav tetap ada di semua page termasuk chat */
 @media (max-width: 899px) {
   .dash-main:has(.dash-chat-page) {
     padding: 0;
-    background: #0b1220;
+    padding-bottom: calc(var(--dash-bnav-h) + env(safe-area-inset-bottom));
+    background: var(--dash-surface);
     overflow: hidden;
-  }
-  .dash-shell:has(.dash-chat-page.is-open) .dash-bnav,
-  .dash--app:has(.dash-chat-page.is-open) .dash-bnav {
-    display: none !important;
-  }
-  .dash-shell:has(.dash-chat-page.is-open) .dash-main,
-  .dash--app:has(.dash-chat-page.is-open) .dash-main {
-    padding-bottom: 0;
   }
 
   .dash-chat-page {
-    height: calc(100dvh - var(--dash-top-h, 3.6rem));
-    max-height: calc(100dvh - var(--dash-top-h, 3.6rem));
+    height: calc(
+      100dvh - var(--dash-top-h, 3.6rem) - var(--dash-bnav-h, 4.15rem) - env(safe-area-inset-bottom)
+    );
+    max-height: calc(
+      100dvh - var(--dash-top-h, 3.6rem) - var(--dash-bnav-h, 4.15rem) - env(safe-area-inset-bottom)
+    );
     display: flex;
     flex-direction: column;
   }
   .dash-chat-page .dash-empty {
     margin: auto;
     padding: 1.5rem;
-    color: #94a3b8;
+    color: #64748b;
   }
   .dash-chat {
     flex: 1;
@@ -7585,12 +7587,6 @@ a.pj-card:hover { transform: translateY(-3px); }
   }
   .dash-chat.has-thread .dash-chat__list { display: none; }
   .dash-chat:not(.has-thread) .dash-chat__pane { display: none; }
-  .dash-chat:not(.has-thread) {
-    /* Sisakan ruang bottom nav saat daftar */
-    max-height: calc(
-      100dvh - var(--dash-top-h, 3.6rem) - var(--dash-bnav-h, 4.15rem) - env(safe-area-inset-bottom)
-    );
-  }
   .dash-chat__list {
     max-height: none;
     height: 100%;
@@ -7608,7 +7604,7 @@ a.pj-card:hover { transform: translateY(-3px); }
     flex: 1;
   }
   .dash-chat__form {
-    padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom));
+    padding: 0.55rem 0.65rem;
   }
   .dash-chat__back { display: grid; }
   .dash-chat__pane-head {
@@ -8294,10 +8290,10 @@ html.is-account-mode body {
   position: relative;
   width: 2.25rem;
   height: 2.25rem;
-  border: 1px solid rgba(232, 238, 247, 0.14);
+  border: 1px solid var(--dash-line);
   border-radius: 0.75rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: #e8eef7;
+  background: #fff;
+  color: #0f172a;
   cursor: pointer;
   font-size: 0.95rem;
 }
