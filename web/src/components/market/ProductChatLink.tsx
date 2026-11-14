@@ -4,12 +4,12 @@ import Link from "next/link";
 import { productChatHref } from "@/lib/access-policy";
 import { openSellerChat } from "@/components/market/SellerChatPanel";
 
-/** Tombol Chat di app → panel overlay ala Delta (bukan WA, bukan komentar). */
+/** Tombol Chat penjual → panel overlay (bukan WA, bukan komentar). */
 export function ProductChatLink({
   productId,
   loggedIn,
   className,
-  children = "Chat",
+  children = "Chat penjual",
 }: {
   productId: string;
   loggedIn: boolean;

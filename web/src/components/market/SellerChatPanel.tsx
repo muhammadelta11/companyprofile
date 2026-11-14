@@ -38,6 +38,7 @@ export function SellerChatPanel() {
     setRoom(null);
     setError(null);
     setNeedLogin(false);
+    document.documentElement.classList.remove("seller-chat-open");
   }, []);
 
   const openFor = useCallback((id: string) => {
@@ -46,6 +47,7 @@ export function SellerChatPanel() {
     setError(null);
     setNeedLogin(false);
     setRoom(null);
+    document.documentElement.classList.add("seller-chat-open");
   }, []);
 
   useEffect(() => {
@@ -60,11 +62,15 @@ export function SellerChatPanel() {
 
   useEffect(() => {
     if (!open) return;
+    document.documentElement.classList.add("seller-chat-open");
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.documentElement.classList.remove("seller-chat-open");
+      window.removeEventListener("keydown", onKey);
+    };
   }, [open, close]);
 
   useEffect(() => {

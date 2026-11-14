@@ -204,20 +204,20 @@ async function MarketDetail({ params }: Props) {
               </div>
             </Link>
 
-            <div className="detail__actions">
+            <div className="detail__actions detail__actions--app">
               {ownListing ? (
                 <>
-                  <Link className="btn btn-teal" href="/dashboard/chat">
+                  <Link className="detail-act detail-act--primary" href="/dashboard/chat">
                     Kelola di akun
                   </Link>
-                  <Link className="btn btn-outline" href="/market">
-                    Kembali ke Market
+                  <Link className="detail-act detail-act--ghost" href="/market">
+                    Kembali
                   </Link>
                 </>
               ) : (
                 <>
                   <OrderLink
-                    className="btn btn-teal"
+                    className="detail-act detail-act--primary"
                     productId={product.id}
                     title={product.title}
                     priceLabel={product.price_label}
@@ -231,21 +231,23 @@ async function MarketDetail({ params }: Props) {
                     <ProductChatLink
                       productId={product.id}
                       loggedIn={canChat}
-                      className="btn btn-outline"
+                      className="detail-act detail-act--secondary"
                     >
-                      Chat di app
+                      Chat penjual
                     </ProductChatLink>
                   ) : null}
-                  <Link className="btn btn-outline" href="/market">
-                    Kembali
-                  </Link>
+                  <div className="detail-act__row">
+                    <Link className="detail-act detail-act--ghost" href="/market">
+                      Kembali
+                    </Link>
+                    <ShareBar
+                      title={product.title}
+                      path={path}
+                      text={`Cek produk ${product.title} di Market Mas'ud El-Tamamy`}
+                    />
+                  </div>
                 </>
               )}
-              <ShareBar
-                title={product.title}
-                path={path}
-                text={`Cek produk ${product.title} di Market Mas'ud El-Tamamy`}
-              />
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { sendProductChatMessage } from "@/app/actions";
 import { useProductChatRealtime } from "@/hooks/useProductChatRealtime";
@@ -37,13 +36,12 @@ export function DashChatThread({
   buyerLabel: string;
   initialMessages: ProductChatMessage[];
 }) {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
   const startedAt = useRef(0);
   const listRef = useRef<HTMLDivElement>(null);
 
-  const { messages, appendOptimistic } = useProductChatRealtime({
+  const { messages, appendOptimistic, confirmOptimistic } = useProductChatRealtime({
     threadId,
     userId,
     initial: initialMessages,
@@ -79,7 +77,13 @@ export function DashChatThread({
       });
       if (res.error) {
         setError(res.error);
-        router.refresh();
+        return;
+      }
+      if (res.messageId) {
+        confirmOptimistic(body, {
+          id: res.messageId,
+          created_at: res.createdAt,
+        });
       }
     });
   }
@@ -87,32 +91,31 @@ export function DashChatThread({
   return (
     <>
       <header className="dash-chat__pane-head">
-        <div>
-          <strong>{productTitle}</strong>
-          <p>{buyerLabel}</p>
-        </div>
-        <div className="dash-chat__pane-actions">
-          <Link className="btn btn-outline btn-sm" href={`/market/${productId}/chat`}>
-            Buka chat
-          </Link>
-          <Link className="btn btn-outline btn-sm" href={`/market/${productId}`}>
-            Lihat produk
-          </Link>
+        <Link href="/dashboard/chat" className="dash-chat__back" aria-label="Kembali ke daftar">
+          ←
+        </Link>
+        <div className="dash-chat__pane-who">
+          <span className="dash-chat__avatar" aria-hidden="true">
+            {(buyerLabel.replace(/^Pembeli:\s*/i, "") || "P").slice(0, 1).toUpperCase()}
+          </span>
+          <div>
+            <strong>{buyerLabel.replace(/^Pembeli:\s*/i, "") || "Pembeli"}</strong>
+            <p>
+              <Link href={`/market/${productId}`}>{productTitle}</Link>
+            </p>
+          </div>
         </div>
       </header>
       <div className="dash-chat__messages" ref={listRef}>
         {messages.length ? (
           messages.map((m) => (
             <div key={m.id} className={`dash-chat__bubble${m.mine ? " is-mine" : ""}`}>
-              <div className="dash-chat__meta">
-                <strong>{m.mine ? "Kamu" : m.sender_name}</strong>
-                <span>{formatWhen(m.created_at)}</span>
-              </div>
               <p>{m.body}</p>
+              <time dateTime={m.created_at}>{formatWhen(m.created_at)}</time>
             </div>
           ))
         ) : (
-          <p className="dash-empty">Belum ada pesan.</p>
+          <p className="dash-chat__empty">Belum ada pesan. Mulai balas di bawah.</p>
         )}
       </div>
       <form className="dash-chat__form" onSubmit={onSubmit}>
@@ -124,17 +127,23 @@ export function DashChatThread({
           aria-hidden="true"
           className="order-sheet__hp"
         />
-        <textarea
+        <input
           name="body"
-          rows={2}
+          type="text"
           required
           maxLength={2000}
-          placeholder="Balas pesan…"
+          placeholder="Ketik pesan…"
           disabled={pending}
+          autoComplete="off"
         />
         {error ? <p className="form-msg form-msg--error">{error}</p> : null}
-        <button type="submit" className="btn btn-teal" disabled={pending}>
-          {pending ? "Mengirim…" : "Kirim"}
+        <button type="submit" className="dash-chat__send" disabled={pending} aria-label="Kirim">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              fill="currentColor"
+              d="M3.4 20.6 21 12 3.4 3.4l.1 7.1L15 12 3.5 13.5z"
+            />
+          </svg>
         </button>
       </form>
     </>

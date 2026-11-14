@@ -72,7 +72,7 @@ export function ProductChat({
 
   const [seedMessages, setSeedMessages] = useState(messages);
   const subscribeId = isSellerView ? activeThreadId : localThreadId ?? thread?.id ?? null;
-  const { messages: liveMessages, appendOptimistic } = useProductChatRealtime({
+  const { messages: liveMessages, appendOptimistic, confirmOptimistic } = useProductChatRealtime({
     threadId: subscribeId,
     userId: userId ?? null,
     initial: seedMessages,
@@ -146,14 +146,16 @@ export function ProductChat({
       });
       if (res.error) {
         setError(res.error);
-        router.refresh();
         return;
+      }
+      if (res.messageId) {
+        confirmOptimistic(body, {
+          id: res.messageId,
+          created_at: res.createdAt,
+        });
       }
       if (res.threadId && !isSellerView) {
         setLocalThreadId(res.threadId);
-      }
-      if (res.threadId && !thread?.id && !isSellerView) {
-        router.refresh();
       }
     });
   }

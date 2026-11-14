@@ -12,16 +12,38 @@ type Options = {
   otherName?: string;
 };
 
+function sortMessages(list: ProductChatMessage[]) {
+  return [...list].sort(
+    (a, b) => Date.parse(a.created_at) - Date.parse(b.created_at) || a.id.localeCompare(b.id)
+  );
+}
+
+/** Gabungkan server + lokal: jangan buang bubble temp saat threadId baru muncul. */
+function mergeMessages(prev: ProductChatMessage[], initial: ProductChatMessage[]) {
+  const byId = new Map<string, ProductChatMessage>();
+  for (const m of initial) byId.set(m.id, m);
+
+  const mineBodies = new Set(initial.filter((m) => m.mine).map((m) => m.body));
+  for (const m of prev) {
+    if (m.id.startsWith("temp-")) {
+      if (!mineBodies.has(m.body)) byId.set(m.id, m);
+      continue;
+    }
+    if (!byId.has(m.id)) byId.set(m.id, m);
+  }
+  return sortMessages([...byId.values()]);
+}
+
 export function useProductChatRealtime({
   threadId,
   userId,
   initial,
   otherName = "Lawan bicara",
 }: Options) {
-  const [messages, setMessages] = useState(initial);
+  const [messages, setMessages] = useState(() => mergeMessages([], initial));
 
   useEffect(() => {
-    setMessages(initial);
+    setMessages((prev) => mergeMessages(prev, initial));
   }, [threadId, initial]);
 
   useEffect(() => {
@@ -52,7 +74,6 @@ export function useProductChatRealtime({
 
           setMessages((prev) => {
             if (prev.some((m) => m.id === row.id)) return prev;
-            // Ganti bubble optimistik (temp-*) bila isi sama dari kita.
             const withoutTemp = mine
               ? prev.filter(
                   (m) =>
@@ -64,7 +85,7 @@ export function useProductChatRealtime({
                 )
               : prev;
             const known = withoutTemp.find((m) => m.sender_id === senderId);
-            return [
+            return sortMessages([
               ...withoutTemp,
               {
                 id: String(row.id),
@@ -74,7 +95,7 @@ export function useProductChatRealtime({
                 sender_name: mine ? "Kamu" : known?.sender_name || otherName,
                 mine,
               },
-            ];
+            ]);
           });
         }
       )
@@ -101,5 +122,30 @@ export function useProductChatRealtime({
     [userId]
   );
 
-  return { messages, appendOptimistic, setMessages };
+  /** Ganti temp-* dengan pesan server (penting saat thread baru — realtime sering kelewatan INSERT). */
+  const confirmOptimistic = useCallback(
+    (body: string, confirmed: { id: string; created_at?: string }) => {
+      if (!userId) return;
+      setMessages((prev) => {
+        const withoutTemp = prev.filter(
+          (m) => !(m.id.startsWith("temp-") && m.mine && m.body === body)
+        );
+        if (withoutTemp.some((m) => m.id === confirmed.id)) return withoutTemp;
+        return sortMessages([
+          ...withoutTemp,
+          {
+            id: confirmed.id,
+            body,
+            created_at: confirmed.created_at ?? new Date().toISOString(),
+            sender_id: userId,
+            sender_name: "Kamu",
+            mine: true,
+          },
+        ]);
+      });
+    },
+    [userId]
+  );
+
+  return { messages, appendOptimistic, confirmOptimistic, setMessages };
 }

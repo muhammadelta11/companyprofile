@@ -2998,10 +2998,33 @@ html.dash-menu-open body { overflow: hidden; }
   border: 1px solid var(--line);
   background: #fff;
 }
+.service-area,
+.service-area__map,
+.area-map,
+.area-map__canvas {
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+}
 .service-area__map {
   width: 100%;
   height: 200px;
   background: #e8eefc;
+}
+.service-area__map .leaflet-container,
+.area-map__canvas .leaflet-container {
+  z-index: 0;
+}
+/* Saat chat terbuka, map jangan nimpa overlay */
+html.seller-chat-open .service-area,
+html.seller-chat-open .area-map,
+html.seller-chat-open .leaflet-container,
+html.seller-chat-open .leaflet-pane {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+.seller-chat-overlay.delta-overlay {
+  z-index: 1200;
 }
 .service-area__caption {
   margin: 0;
@@ -5314,6 +5337,101 @@ div.sheet__install { cursor: default; }
   gap: 0.55rem;
 }
 
+/* Aksi produk ala app mobile */
+.detail__actions--app {
+  display: grid;
+  gap: 0.55rem;
+}
+.detail-act {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border-radius: 0.85rem;
+  border: 1px solid transparent;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 750;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.detail-act--primary {
+  background: #0f766e;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(15, 118, 110, 0.22);
+}
+.detail-act--primary:hover {
+  background: #0d9488;
+  color: #fff;
+}
+.detail-act--secondary {
+  background: #fff;
+  color: #0f766e;
+  border-color: rgba(15, 118, 110, 0.28);
+}
+.detail-act--secondary:hover {
+  background: rgba(15, 118, 110, 0.06);
+  color: #0f766e;
+}
+.detail-act--ghost {
+  background: transparent;
+  color: #475569;
+  border-color: rgba(15, 23, 42, 0.12);
+  font-weight: 700;
+  font-size: 0.86rem;
+  min-height: 2.45rem;
+}
+.detail-act--ghost:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+.detail-act__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.detail-act__row .share-bar,
+.detail-act__row .share-bar__trigger {
+  width: 100%;
+}
+.detail-act__row .share-bar__trigger {
+  min-height: 2.45rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: transparent;
+  color: #475569;
+  font-weight: 700;
+  font-size: 0.86rem;
+  box-shadow: none;
+}
+.detail-act__row .share-bar__trigger:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+@media (min-width: 900px) {
+  .detail__actions--app {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .detail-act {
+    width: auto;
+    min-width: 9.5rem;
+  }
+  .detail-act__row {
+    display: contents;
+  }
+  .detail-act__row .share-bar {
+    width: auto;
+  }
+}
+
 /* Share bar */
 .share-bar {
   position: relative;
@@ -6679,6 +6797,7 @@ a.pj-card:hover { transform: translateY(-3px); }
   gap: 0.45rem;
 }
 .apage .detail__actions .btn { width: 100%; justify-content: center; }
+.apage .detail__actions--app .detail-act { width: 100%; }
 .apage .detail__related { margin-top: 0.5rem; }
 .apage .detail__related-head {
   display: flex;
@@ -7114,34 +7233,60 @@ a.pj-card:hover { transform: translateY(-3px); }
 
 .dash-chat {
   display: grid;
-  grid-template-columns: minmax(220px, 280px) 1fr;
-  gap: 0.85rem;
-  min-height: 420px;
+  grid-template-columns: minmax(240px, 300px) 1fr;
+  gap: 0;
+  min-height: min(72vh, 640px);
   align-items: stretch;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 1rem;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
 }
 .dash-chat__list {
   display: grid;
-  gap: 0.45rem;
+  gap: 0;
   align-content: start;
-  max-height: 70vh;
+  max-height: min(72vh, 640px);
   overflow-y: auto;
+  border-right: 1px solid rgba(15, 23, 42, 0.08);
+  background: #f8fafc;
 }
 .dash-chat__item {
   display: grid;
-  gap: 0.15rem;
-  padding: 0.75rem 0.8rem;
-  border-radius: 0.9rem;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #fff;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.55rem;
+  align-items: start;
+  padding: 0.8rem 0.85rem;
+  border-radius: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
   text-decoration: none;
   color: inherit;
+  background: transparent;
+}
+.dash-chat__item:hover {
+  background: #eef2ff;
+}
+.dash-chat__avatar {
+  width: 2.45rem;
+  height: 2.45rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  background: linear-gradient(145deg, #14b8a6, #0f766e);
+  color: #fff;
+  flex: none;
+}
+.dash-chat__item-body {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
 }
 .dash-chat__item.is-active {
-  border-color: rgba(29, 78, 216, 0.35);
-  background: var(--teal-soft);
-}
-.dash-chat__item.is-unread {
-  background: #eff6ff;
+  background: #e0f2fe;
 }
 .dash-chat__item.is-unread strong { font-weight: 800; }
 .dash-chat__item strong {
@@ -7194,87 +7339,184 @@ a.pj-card:hover { transform: translateY(-3px); }
   padding: 0;
   text-decoration: underline;
 }
-.dash-chat__item span { font-size: 0.75rem; color: var(--muted); }
+.dash-chat__item-body > span { font-size: 0.72rem; color: var(--muted); }
 .dash-chat__item p {
-  margin: 0.2rem 0 0;
+  margin: 0.15rem 0 0;
   font-size: 0.8rem;
-  color: var(--ink);
+  color: #334155;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.dash-chat__item time { font-size: 0.7rem; color: var(--muted); }
+.dash-chat__item time {
+  font-size: 0.68rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
 .dash-chat__pane {
   display: grid;
   grid-template-rows: auto 1fr auto;
-  gap: 0.65rem;
+  gap: 0;
   min-width: 0;
-  padding: 0.85rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #fff;
+  min-height: 0;
+  background:
+    linear-gradient(180deg, rgba(236, 253, 245, 0.65), rgba(240, 249, 255, 0.9));
 }
 .dash-chat__pane-head {
   display: flex;
-  justify-content: space-between;
-  gap: 0.75rem;
-  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.7rem 0.85rem;
+  background: #0f766e;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+.dash-chat__back {
+  display: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  place-items: center;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.12);
+  flex: none;
+}
+@media (max-width: 860px) {
+  .dash-chat__back { display: grid; }
+}
+.dash-chat__pane-who {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+.dash-chat__pane-who .dash-chat__avatar {
+  background: rgba(255, 255, 255, 0.18);
+}
+.dash-chat__pane-head strong {
+  display: block;
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
 }
 .dash-chat__pane-head p {
-  margin: 0.2rem 0 0;
-  font-size: 0.8rem;
-  color: var(--muted);
+  margin: 0.15rem 0 0;
+  font-size: 0.72rem;
+  opacity: 0.88;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+.dash-chat__pane-head a {
+  color: inherit;
+  text-decoration: none;
+}
+.dash-chat__pane-head a:hover { text-decoration: underline; }
 .dash-chat__messages {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.45rem;
   align-content: start;
-  max-height: 48vh;
+  min-height: 18rem;
+  max-height: none;
+  height: 100%;
   overflow-y: auto;
-  padding: 0.25rem;
+  padding: 0.85rem 0.75rem;
+}
+.dash-chat__empty {
+  margin: 2rem auto;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+.dash-chat__idle {
+  display: grid;
+  place-items: center;
+  min-height: 18rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  padding: 1.5rem;
+  text-align: center;
 }
 .dash-chat__bubble {
-  max-width: 90%;
-  padding: 0.65rem 0.75rem;
-  border-radius: 0.85rem;
-  background: #f1f5f9;
+  max-width: min(85%, 26rem);
+  padding: 0.55rem 0.7rem 0.35rem;
+  border-radius: 0.85rem 0.85rem 0.85rem 0.25rem;
+  background: #fff;
   justify-self: start;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 .dash-chat__bubble.is-mine {
   justify-self: end;
-  background: var(--teal-soft);
+  background: #dcf8c6;
+  border-radius: 0.85rem 0.85rem 0.25rem 0.85rem;
 }
-.dash-chat__meta {
-  display: flex;
-  gap: 0.45rem;
-  font-size: 0.72rem;
-  color: var(--muted);
-}
-.dash-chat__meta strong { color: var(--ink); }
 .dash-chat__bubble p {
-  margin: 0.25rem 0 0;
-  font-size: 0.88rem;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  color: #0f172a;
+}
+.dash-chat__bubble time {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  color: #64748b;
+  text-align: right;
 }
 .dash-chat__form {
   display: grid;
-  gap: 0.5rem;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+  align-items: center;
+  padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom));
+  background: #f0f2f5;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
-.dash-chat__form textarea {
+.dash-chat__form input[type="text"]:not(.order-sheet__hp) {
   width: 100%;
+  min-width: 0;
   font: inherit;
-  padding: 0.65rem 0.75rem;
-  border-radius: 0.75rem;
-  border: 1px solid rgba(15, 23, 42, 0.12);
-  resize: vertical;
+  padding: 0.7rem 0.9rem;
+  border-radius: 999px;
+  border: 0;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+.dash-chat__form .form-msg {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.dash-chat__send {
+  width: 2.55rem;
+  height: 2.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex: none;
+}
+.dash-chat__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 @media (max-width: 860px) {
   .dash-chat {
     grid-template-columns: 1fr;
+    min-height: calc(100dvh - 8rem);
   }
-  .dash-chat__list { max-height: 220px; }
+  .dash-chat.has-thread .dash-chat__list { display: none; }
+  .dash-chat:not(.has-thread) .dash-chat__pane { display: none; }
+  .dash-chat__list { max-height: none; border-right: 0; }
+  .dash-chat__messages { min-height: 12rem; }
 }
 
 /* Komentar produk (wajib login untuk menulis) */

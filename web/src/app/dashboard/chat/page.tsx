@@ -39,11 +39,11 @@ async function Inbox({ searchParams }: Props) {
 
   return (
     <>
-      <DashHead title="Chat" text="Pesan masuk dari Market — realtime." />
+      <DashHead title="Chat" text="Kotak masuk Market — gaya WhatsApp." />
       {!threads.length ? (
-        <Empty>Belum ada chat. Pembeli memulai dari tombol Chat di Market.</Empty>
+        <Empty>Belum ada chat. Pembeli memulai dari tombol Chat penjual di Market.</Empty>
       ) : (
-        <div className="dash-chat">
+        <div className={`dash-chat${active ? " has-thread" : ""}`}>
           <aside className="dash-chat__list" aria-label="Daftar percakapan">
             {threads.map((t) => (
               <ThreadLink key={t.id} thread={t} activeId={active?.id} />
@@ -64,7 +64,9 @@ async function Inbox({ searchParams }: Props) {
                 />
               </>
             ) : (
-              <Empty>Pilih percakapan.</Empty>
+              <div className="dash-chat__idle">
+                <p>Pilih chat di kiri untuk mulai membalas.</p>
+              </div>
             )}
           </section>
         </div>
@@ -82,17 +84,23 @@ function ThreadLink({
 }) {
   const active = thread.id === activeId;
   const unread = thread.unread ?? 0;
+  const name = thread.buyer_name || "Pembeli";
   return (
     <Link
       href={`/dashboard/chat?id=${thread.id}`}
       className={`dash-chat__item${active ? " is-active" : ""}${unread > 0 ? " is-unread" : ""}`}
     >
-      <strong>
-        {thread.product_title}
-        {unread > 0 ? <em>{unread > 9 ? "9+" : unread}</em> : null}
-      </strong>
-      <span>{thread.buyer_name}</span>
-      <p>{thread.preview || "—"}</p>
+      <span className="dash-chat__avatar" aria-hidden="true">
+        {name.slice(0, 1).toUpperCase()}
+      </span>
+      <span className="dash-chat__item-body">
+        <strong>
+          {name}
+          {unread > 0 ? <em>{unread > 9 ? "9+" : unread}</em> : null}
+        </strong>
+        <span>{thread.product_title}</span>
+        <p>{thread.preview || "—"}</p>
+      </span>
       <time>{formatDate(thread.last_message_at)}</time>
     </Link>
   );
