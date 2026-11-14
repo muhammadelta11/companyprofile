@@ -200,17 +200,19 @@ export async function getInboxThreads(user: CurrentUser): Promise<ProductChatThr
     };
   });
 
-  // Preview pesan terakhir (batch sederhana)
-  for (const t of threads.slice(0, 30)) {
-    const { data: last } = await supabase
-      .from("product_messages")
-      .select("body")
-      .eq("thread_id", t.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    t.preview = last?.body ? String(last.body).slice(0, 120) : "";
-  }
+  // Preview terakhir — paralel (hindari N+1 lambat)
+  await Promise.all(
+    threads.slice(0, 30).map(async (t) => {
+      const { data: last } = await supabase
+        .from("product_messages")
+        .select("body")
+        .eq("thread_id", t.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      t.preview = last?.body ? String(last.body).slice(0, 120) : "";
+    })
+  );
 
   return threads;
 }

@@ -29,6 +29,7 @@ export function DashChatThread({
   userId,
   buyerLabel,
   initialMessages,
+  onBack,
 }: {
   productId: string;
   productTitle: string;
@@ -36,6 +37,7 @@ export function DashChatThread({
   userId: string;
   buyerLabel: string;
   initialMessages: ProductChatMessage[];
+  onBack?: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, start] = useTransition();
@@ -92,9 +94,15 @@ export function DashChatThread({
   return (
     <>
       <header className="dash-chat__pane-head">
-        <Link href="/dashboard/chat" className="dash-chat__back" aria-label="Kembali ke daftar">
-          ←
-        </Link>
+        {onBack ? (
+          <button type="button" className="dash-chat__back" aria-label="Kembali ke daftar" onClick={onBack}>
+            ←
+          </button>
+        ) : (
+          <Link href="/dashboard/chat" className="dash-chat__back" aria-label="Kembali ke daftar">
+            ←
+          </Link>
+        )}
         <div className="dash-chat__pane-who">
           <span className="dash-chat__avatar" aria-hidden="true">
             {(buyerLabel.replace(/^Pembeli:\s*/i, "") || "P").slice(0, 1).toUpperCase()}
