@@ -217,13 +217,19 @@ export function SlidingPuzzle({ canSave, userName, boards }: Props) {
         mode,
         created_at: new Date().toISOString(),
       };
+      const meKey = meName.toLowerCase();
+      const existing = list.find(
+        (r) => r.user_id === "me" || r.player_name.toLowerCase() === meKey
+      );
+      // Jangan turunkan ranking lokal jika run baru lebih jelek.
+      if (existing && !scoreBeats(mine, existing)) {
+        return prev;
+      }
       const withoutMe = list.filter(
-        (r) => r.player_name.toLowerCase() !== meName.toLowerCase() && r.user_id !== "me"
+        (r) => r.player_name.toLowerCase() !== meKey && r.user_id !== "me"
       );
       const next = [...withoutMe, mine]
-        .sort((a, b) =>
-          scoreBeats(a, b) ? -1 : scoreBeats(b, a) ? 1 : 0
-        )
+        .sort((a, b) => (scoreBeats(a, b) ? -1 : scoreBeats(b, a) ? 1 : 0))
         .slice(0, 10);
       return { ...prev, [levelId]: next };
     });

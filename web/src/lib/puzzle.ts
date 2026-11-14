@@ -167,9 +167,13 @@ export function calcScore(input: {
   const starFactor = stars === 3 ? 1.25 : stars === 2 ? 1.1 : 1;
   const streakBonus =
     level.id !== "mudah" && streakDays > 0 ? Math.min(streakDays, 7) * 8 : 0;
+  // Basis ×25 agar langkah/waktu membedakan skor (rumus lama sering mentok 10).
   const raw =
-    level.xpBase * level.multiplier * starFactor - seconds * 1.8 - moves * 2.2 + streakBonus;
-  return Math.max(10, Math.round(raw));
+    level.xpBase * level.multiplier * starFactor * 25 -
+    seconds * 1.8 -
+    moves * 2.2 +
+    streakBonus;
+  return Math.max(1, Math.round(raw));
 }
 
 export function starsLabel(n: number) {

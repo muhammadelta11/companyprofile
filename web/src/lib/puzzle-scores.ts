@@ -56,22 +56,27 @@ export async function getPuzzleLeaderboard(
       created_at: String(row.created_at ?? ""),
     };
     const prev = best.get(uid);
-    if (!prev || mapped.score > prev.score) best.set(uid, mapped);
+    // Pakai scoreBeats: jika poin skor sama (bug lama mentok 10), langkah/waktu lebih kecil menang.
+    if (!prev || scoreBeats(mapped, prev)) best.set(uid, mapped);
   }
 
   return [...best.values()]
-    .sort((a, b) => b.score - a.score || a.seconds - b.seconds || a.moves - b.moves)
+    .sort((a, b) => (scoreBeats(a, b) ? -1 : scoreBeats(b, a) ? 1 : 0))
     .slice(0, limit);
 }
 
-/** Bandingkan skor (lebih tinggi menang; seri → waktu/langkah lebih kecil). */
+/**
+ * Bandingkan percobaan: poin skor lebih tinggi menang.
+ * Jika poin sama (atau hampir tidak membedakan), waktu lalu langkah lebih kecil = lebih baik.
+ */
 export function scoreBeats(
   a: { score: number; seconds: number; moves: number },
   b: { score: number; seconds: number; moves: number }
 ) {
   if (a.score !== b.score) return a.score > b.score;
   if (a.seconds !== b.seconds) return a.seconds < b.seconds;
-  return a.moves < b.moves;
+  if (a.moves !== b.moves) return a.moves < b.moves;
+  return false;
 }
 
 /** Posisi skor di antara best mingguan (1-based). */
