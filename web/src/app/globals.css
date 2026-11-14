@@ -7231,6 +7231,9 @@ a.pj-card:hover { transform: translateY(-3px); }
 }
 .mk-chat__dash a { color: var(--teal); font-weight: 700; }
 
+.dash-chat-page {
+  min-width: 0;
+}
 .dash-chat {
   display: grid;
   grid-template-columns: minmax(240px, 300px) 1fr;
@@ -7483,7 +7486,7 @@ a.pj-card:hover { transform: translateY(-3px); }
   grid-template-columns: 1fr auto;
   gap: 0.45rem;
   align-items: center;
-  padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom));
+  padding: 0.55rem 0.65rem;
   background: #f0f2f5;
   border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
@@ -7517,15 +7520,89 @@ a.pj-card:hover { transform: translateY(-3px); }
   opacity: 0.5;
   cursor: not-allowed;
 }
-@media (max-width: 860px) {
+
+/* HP: chat full-bleed, tanpa kartu mengambang / tumpang tindih bottom nav */
+@media (max-width: 899px) {
+  .dash-main:has(.dash-chat-page) {
+    padding: 0;
+    background: #0b1220;
+    overflow: hidden;
+  }
+  .dash-shell:has(.dash-chat-page.is-open) .dash-bnav,
+  .dash--app:has(.dash-chat-page.is-open) .dash-bnav {
+    display: none !important;
+  }
+  .dash-shell:has(.dash-chat-page.is-open) .dash-main,
+  .dash--app:has(.dash-chat-page.is-open) .dash-main {
+    padding-bottom: 0;
+  }
+
+  .dash-chat-page {
+    height: calc(100dvh - var(--dash-top-h, 3.6rem));
+    max-height: calc(100dvh - var(--dash-top-h, 3.6rem));
+    display: flex;
+    flex-direction: column;
+  }
+  .dash-chat-page .dash-empty {
+    margin: auto;
+    padding: 1.5rem;
+    color: #94a3b8;
+  }
   .dash-chat {
+    flex: 1;
+    min-height: 0;
+    height: 100%;
     grid-template-columns: 1fr;
-    min-height: calc(100dvh - 8rem);
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
   }
   .dash-chat.has-thread .dash-chat__list { display: none; }
   .dash-chat:not(.has-thread) .dash-chat__pane { display: none; }
-  .dash-chat__list { max-height: none; border-right: 0; }
-  .dash-chat__messages { min-height: 12rem; }
+  .dash-chat:not(.has-thread) {
+    /* Sisakan ruang bottom nav saat daftar */
+    max-height: calc(
+      100dvh - var(--dash-top-h, 3.6rem) - var(--dash-bnav-h, 4.15rem) - env(safe-area-inset-bottom)
+    );
+  }
+  .dash-chat__list {
+    max-height: none;
+    height: 100%;
+    border-right: 0;
+    background: #fff;
+  }
+  .dash-chat__pane {
+    height: 100%;
+    min-height: 0;
+    background:
+      linear-gradient(180deg, #ece5dd 0%, #e5ddd5 40%, #d6cdc4 100%);
+  }
+  .dash-chat__messages {
+    min-height: 0;
+    flex: 1;
+  }
+  .dash-chat__form {
+    padding: 0.55rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom));
+  }
+  .dash-chat__back { display: grid; }
+  .dash-chat__pane-head {
+    padding-top: 0.55rem;
+    padding-bottom: 0.55rem;
+  }
+  .dash-chat__pane-head strong {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .dash-chat__pane-who {
+    min-width: 0;
+    flex: 1;
+  }
+  .dash-chat__pane-who > div {
+    min-width: 0;
+  }
 }
 
 /* Komentar produk (wajib login untuk menulis) */

@@ -9,7 +9,7 @@ import {
 } from "@/lib/product-chat";
 import { ChatReadMarker } from "@/components/dashboard/ChatReadMarker";
 import { DashChatThread } from "@/components/dashboard/DashChatThread";
-import { DashHead, DashLoading, Empty, formatDate } from "../ui";
+import { DashLoading, Empty, formatDate } from "../ui";
 
 type Props = { searchParams: Promise<{ id?: string }> };
 
@@ -25,7 +25,7 @@ async function Inbox({ searchParams }: Props) {
   const user = await requireUser();
   const { id } = await searchParams;
   const threads = await getInboxThreads(user);
-  // Jangan auto-buka thread pertama — list harus terlihat dulu (terutama di HP).
+  // List dulu; buka thread hanya jika ?id= ada.
   const active = id ? threads.find((t) => t.id === id) ?? null : null;
   let messages: ProductChatMessage[] = [];
   if (active) {
@@ -39,26 +39,15 @@ async function Inbox({ searchParams }: Props) {
     : "";
 
   return (
-    <>
-      <DashHead
-        title="Chat"
-        text="Satu thread per produk + pembeli. User yang sama di 3 produk = 3 chat terpisah."
-      />
+    <div className={`dash-chat-page${active ? " is-open" : ""}`}>
       {!threads.length ? (
         <Empty>Belum ada chat. Pembeli memulai dari tombol Chat penjual di Market.</Empty>
       ) : (
         <div className={`dash-chat${active ? " has-thread" : ""}`}>
           <aside className="dash-chat__list" aria-label="Daftar percakapan">
-            <p className="dash-chat__list-head">
-              {threads.length} percakapan
-            </p>
+            <p className="dash-chat__list-head">{threads.length} percakapan</p>
             {threads.map((t) => (
-              <ThreadLink
-                key={t.id}
-                thread={t}
-                activeId={active?.id}
-                viewerId={user.id}
-              />
+              <ThreadLink key={t.id} thread={t} activeId={active?.id} viewerId={user.id} />
             ))}
           </aside>
           <section className="dash-chat__pane">
@@ -77,17 +66,13 @@ async function Inbox({ searchParams }: Props) {
               </>
             ) : (
               <div className="dash-chat__idle">
-                <p>
-                  Pilih percakapan di daftar.
-                  <br />
-                  <small>Produk berbeda = chat terpisah, meski pembelinya sama.</small>
-                </p>
+                <p>Pilih percakapan di daftar.</p>
               </div>
             )}
           </section>
         </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -104,9 +89,7 @@ function ThreadLink({
   const unread = thread.unread ?? 0;
   const iAmBuyer = thread.buyer_id === viewerId;
   const title = thread.product_title || "Produk";
-  const subtitle = iAmBuyer
-    ? "Kamu · pembeli"
-    : thread.buyer_name || "Pembeli";
+  const subtitle = iAmBuyer ? "Kamu · pembeli" : thread.buyer_name || "Pembeli";
   const initial = (iAmBuyer ? title : subtitle).slice(0, 1).toUpperCase();
 
   return (
