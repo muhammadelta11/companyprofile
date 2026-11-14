@@ -1,4 +1,4 @@
-import type { ProductChatReceipt } from "@/lib/product-chat";
+import type { ProductChatReceipt } from "@/lib/product-chat-shared";
 
 /** Centang status pesan sendiri: mengirim / terkirim / dibaca. */
 export function ChatReceipt({ receipt }: { receipt?: ProductChatReceipt }) {

@@ -6,7 +6,7 @@ import {
   peerLastReadFromThread,
   withMessageReceipts,
   type ProductChatMessage,
-} from "@/lib/product-chat";
+} from "@/lib/product-chat-shared";
 
 type Options = {
   threadId: string | null;

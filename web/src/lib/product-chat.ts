@@ -1,32 +1,19 @@
 import { createClient } from "@/lib/supabase/server";
 import { supabaseReady } from "@/lib/supabase/env";
 import type { CurrentUser } from "@/lib/auth";
+import {
+  peerLastReadFromThread,
+  withMessageReceipts,
+  type ProductChatMessage,
+  type ProductChatThread,
+} from "@/lib/product-chat-shared";
 
-export type ProductChatReceipt = "sending" | "sent" | "read";
-
-export type ProductChatMessage = {
-  id: string;
-  body: string;
-  created_at: string;
-  sender_id: string;
-  sender_name: string;
-  mine: boolean;
-  /** Status baca untuk pesan sendiri (centang WhatsApp-style). */
-  receipt?: ProductChatReceipt;
-};
-
-export type ProductChatThread = {
-  id: string;
-  product_id: string;
-  buyer_id: string;
-  seller_id: string | null;
-  last_message_at: string;
-  created_at: string;
-  product_title?: string;
-  buyer_name?: string;
-  preview?: string;
-  unread?: number;
-};
+export type {
+  ProductChatMessage,
+  ProductChatReceipt,
+  ProductChatThread,
+} from "@/lib/product-chat-shared";
+export { peerLastReadFromThread, withMessageReceipts } from "@/lib/product-chat-shared";
 
 const THREAD_COLS =
   "id, product_id, buyer_id, seller_id, last_message_at, created_at, buyer_unread, seller_unread, buyer_last_read_at, seller_last_read_at";
@@ -39,36 +26,6 @@ function myUnreadForThread(
   const buyerUnread = Number(row.buyer_unread ?? 0) || 0;
   const sellerUnread = Number(row.seller_unread ?? 0) || 0;
   return buyerId === userId ? buyerUnread : sellerUnread;
-}
-
-/** last_read lawan bicara → receipt untuk pesan sendiri. */
-export function withMessageReceipts(
-  messages: ProductChatMessage[],
-  peerLastReadAt: string | null | undefined
-): ProductChatMessage[] {
-  const peerTs = peerLastReadAt ? Date.parse(peerLastReadAt) : NaN;
-  return messages.map((m) => {
-    if (!m.mine) return { ...m, receipt: undefined };
-    if (m.id.startsWith("temp-")) return { ...m, receipt: "sending" };
-    if (Number.isFinite(peerTs) && Date.parse(m.created_at) <= peerTs) {
-      return { ...m, receipt: "read" };
-    }
-    return { ...m, receipt: "sent" };
-  });
-}
-
-export function peerLastReadFromThread(
-  viewerId: string,
-  thread: {
-    buyer_id: unknown;
-    buyer_last_read_at?: unknown;
-    seller_last_read_at?: unknown;
-  } | null
-): string | null {
-  if (!thread) return null;
-  const iAmBuyer = String(thread.buyer_id) === viewerId;
-  const raw = iAmBuyer ? thread.seller_last_read_at : thread.buyer_last_read_at;
-  return raw ? String(raw) : null;
 }
 
 export function isProductSeller(user: CurrentUser, productOwnerId: string | null) {
